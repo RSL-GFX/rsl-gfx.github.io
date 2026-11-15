@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>RSL GFX Studio</title>
 <meta name="rsl-site" content="1">
-<meta name="rsl-build" content="1794774724">
+<meta name="rsl-build" content="1794774989">
 <meta name="rsl-pass" content="5492dcdcf24546ce707e4c6e370ab4a0736d0defa0cbbf6f66798e57a309c6a1">
 <meta name="robots" content="noindex,nofollow">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -398,6 +398,15 @@ function cityOf(m){if(m.city)return m.city;const v=m.venue||'';const p=v.match(/
 const hasAr=s=>/[\u0600-\u06FF]/.test(s||'');
 const CITY_AR=Object.fromEntries(Object.entries(CITY).map(([a,e])=>[e,a]));
 function cityAr(m){if(m.cityAr)return m.cityAr;const v=m.venue||'';const p=v.match(/\(([^)]+)\)\s*$/);const c=(p?p[1]:v).trim();if(hasAr(c))return c;return CITY_AR[(m.city||c).toUpperCase()]||c;}
+// Stadium names: SAFF gives them in Arabic as "Stadium (City)"; English names for the cards.
+const STADIUM_EN={'استاد الأمير محمد بن فهد':'Prince Mohammed bin Fahd Stadium','اس اتش جي ارينا':'SHG Arena','الأول بارك':'Al-Awwal Park',
+ 'استاد مدينة الأمير سلطان بن عبدالعزيز الرياضية':'Prince Sultan bin Abdulaziz Sports City','ملعب نادي التعاون':'Al Taawoun Club Stadium','مدينة المجمعة الرياضية':'Al Majmaah Sports City',
+ 'المملكة أرينا':'Kingdom Arena','استاد مدينة الملك خالد الرياضية':'King Khalid Sports City','ملعب نادي الاتفاق':'Al Ettifaq Club Stadium',
+ 'ملعب الإنماء بمدينة الملك عبدالله الرياضية':'Alinma Stadium','مدينة الأمير فيصل بن فهد الرياضية':'Prince Faisal bin Fahd Sports City','ملعب نادي الحزم':'Al Hazem Club Stadium',
+ 'مدينة الأمير عبدالله الفيصل الرياضية':'Prince Abdullah Al Faisal Sports City','ميدان تمويل الأولى':'Tamweel Aloula Arena','ملعب مدينة الأمير عبدالله بن جلوي الرياضية':'Prince Abdullah bin Jalawi Sports City',
+ 'استاد مدينة الملك عبدالله الرياضية':'King Abdullah Sports City','ملعب الأمير سعود بن جلوي':'Prince Saud bin Jalawi Stadium'};
+function stadiumOf(m,ar){const v=(m.venue||'').replace(/\([^)]*\)\s*$/,'').trim();if(!v)return '';if(ar)return hasAr(v)?v:'';
+ if(!hasAr(v))return v.toUpperCase();const k=v.replace(/\s+/g,' ');return (STADIUM_EN[k]||'').toUpperCase();}
 function weekdayAr(ds){const d=new Date(ds+'T00:00:00');return isNaN(d)?'':d.toLocaleDateString('ar-u-nu-latn',{weekday:'long'});}
 function ddmm(ds){const d=new Date(ds+'T00:00:00');return isNaN(d)?'':`${d.getDate()}/${d.getMonth()+1}`;}
 function weekday(ds){const d=new Date(ds+'T00:00:00');return isNaN(d)?'':d.toLocaleDateString('en-US',{weekday:'long'}).toUpperCase();}
@@ -518,8 +527,8 @@ function drawTable(c,o){
 const GRAD=[[0,'#ffffff'],[0.5,'#ffffff'],[1,'#a3c1ff']];
 const nameCol=t=>(t&&t.nameColor)||(lum((t&&t.color)||'#444')>150?'#0d1d4a':'#ffffff');
 // Card specs measured from the PSDs (design pixels, relative to the card's top-left).
-const SPEC_DAY={w:647,boxH:325,r:48,crestCy:131.5,crest:209,nameBase:291,nameSize:33.4,cityBase:386,citySize:44,timeBase:482,timeSize:86,scoreBase:471,scoreSize:154,hx:162,ax:486,dash:[304,414,41,20]};
-const SPEC_MWF={w:699,boxH:350,r:42,crestCy:145,crest:216,nameBase:318,nameSize:41.4,cityBase:414,citySize:42.8,timeBase:479,timeSize:70};
+const SPEC_DAY={fix:{city:378,citySize:42,stad:425,stadSize:26,time:500,timeSize:80},w:647,boxH:325,r:48,crestCy:131.5,crest:209,nameBase:291,nameSize:33.4,cityBase:386,citySize:44,timeBase:482,timeSize:86,scoreBase:471,scoreSize:154,hx:162,ax:486,dash:[304,414,41,20]};
+const SPEC_MWF={fix:{city:402,citySize:40,stad:443,stadSize:25,time:508,timeSize:64},w:699,boxH:350,r:42,crestCy:145,crest:216,nameBase:318,nameSize:41.4,cityBase:414,citySize:42.8,timeBase:479,timeSize:70};
 const SPEC_MWR={w:688,boxH:345,r:42,crestCy:141.5,crest:212,nameBase:313,nameSize:41.4,scoreBase:488,scoreSize:148.6,hx:167,ax:499,dash:[309,439,43,19]};
 function vgrad(c,y0,y1,a,b){const g=c.createLinearGradient(0,y0,0,y1);g.addColorStop(0,a);g.addColorStop(1,b);return g;}
 function drawCard(c,m,mode,S_,ar){
@@ -540,9 +549,12 @@ function drawCard(c,m,mode,S_,ar){
   txt(c,String(ar?m.hs:m.as),S_.ax,S_.scoreBase,FT.score,sz,col,'center');
   const [dx,dy,dw,dh]=S_.dash;rr(c,dx,dy,dw,dh,4);c.fillStyle='#e9ebef';c.fill();
  }else if(S_.cityBase){
-  txt(c,(ar?cityAr(m):cityOf(m))||' ',S_.w/2,S_.cityBase-(ar?10:0),FT.card,S_.citySize,vgrad(c,S_.cityBase-S_.citySize,S_.cityBase,'#ffffff','#c9ccd3'),'center','alphabetic',S_.w-40);
+  // city, then stadium (smaller, Lama Sans), then kick-off time
+  const st=stadiumOf(m,ar),L=S_.fix;
+  txt(c,(ar?cityAr(m):cityOf(m))||' ',S_.w/2,L.city-(ar?8:0),FT.card,L.citySize,vgrad(c,L.city-L.citySize,L.city,'#ffffff','#c9ccd3'),'center','alphabetic',S_.w-40);
+  if(st)txt(c,st,S_.w/2,L.stad-(ar?4:0),FT.arMed,L.stadSize*(ar?1.12:1),'#aeb6c6','center','alphabetic',S_.w-36);
   c.direction='ltr';
-  txt(c,m.time||'TBC',S_.w/2,S_.timeBase,FT.num,S_.timeSize,vgrad(c,S_.timeBase-S_.timeSize*0.7,S_.timeBase,'#ffffff','#c9ccd3'),'center','alphabetic',S_.w-40);
+  txt(c,m.time||'TBC',S_.w/2,L.time,FT.num,L.timeSize,vgrad(c,L.time-L.timeSize*0.7,L.time,'#ffffff','#c9ccd3'),'center','alphabetic',S_.w-40);
  }else{c.direction='ltr';
   txt(c,m.time||'TBC',S_.w/2,S_.scoreBase-20,FT.num,S_.scoreSize*0.55,'#ffffff','center','alphabetic',S_.w-40);
  }
@@ -582,7 +594,7 @@ function drawDay(c,o,mode){
  const k=n>4?full/row:({1:1.3,2:1.3,3:1.2,4:1})[n];
  const total=row*k,x0=(CD.W-total)/2,top=Math.max(3290,CD.top-(510*k-510)/2);
  ms.forEach((m,i)=>{const p=ar?n-1-i:i;c.save();c.translate(x0+p*(S_.w+CD.gap)*k,top);c.scale(k,k);
-  rr(c,0,0,S_.w,510,S_.r);c.fillStyle='rgba(255,255,255,0.055)';c.fill();drawCard(c,m,mode,S_,ar);c.restore();});
+  const BH=mode==='fixtures'?535:510;rr(c,0,0,S_.w,BH,S_.r);c.fillStyle='rgba(255,255,255,0.055)';c.fill();drawCard(c,m,mode,S_,ar);c.restore();});
 }
 /* Whole-matchweek version (FIXTURES & RESULTS psd, 3241 × 4201) */
 const MWP={y:1688,r:200,h:2573,photoH:1900,rsl:[200,1641,358,317]};
