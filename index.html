@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>RSL GFX Studio</title>
 <meta name="rsl-site" content="1">
-<meta name="rsl-build" content="1794774989">
+<meta name="rsl-build" content="1794775071">
 <meta name="rsl-pass" content="5492dcdcf24546ce707e4c6e370ab4a0736d0defa0cbbf6f66798e57a309c6a1">
 <meta name="robots" content="noindex,nofollow">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -405,7 +405,7 @@ const STADIUM_EN={'استاد الأمير محمد بن فهد':'Prince Mohamme
  'ملعب الإنماء بمدينة الملك عبدالله الرياضية':'Alinma Stadium','مدينة الأمير فيصل بن فهد الرياضية':'Prince Faisal bin Fahd Sports City','ملعب نادي الحزم':'Al Hazem Club Stadium',
  'مدينة الأمير عبدالله الفيصل الرياضية':'Prince Abdullah Al Faisal Sports City','ميدان تمويل الأولى':'Tamweel Aloula Arena','ملعب مدينة الأمير عبدالله بن جلوي الرياضية':'Prince Abdullah bin Jalawi Sports City',
  'استاد مدينة الملك عبدالله الرياضية':'King Abdullah Sports City','ملعب الأمير سعود بن جلوي':'Prince Saud bin Jalawi Stadium'};
-function stadiumOf(m,ar){const v=(m.venue||'').replace(/\([^)]*\)\s*$/,'').trim();if(!v)return '';if(ar)return hasAr(v)?v:'';
+function stadiumOf(m,ar){const v=(m.venue||'').replace(/\([^)]*\)\s*$/,'').trim();if(!v)return '';if(ar)return hasAr(v)?(/مدينة/.test(v)?v.replace(/^استاد\s+/,''):v):''; // Arabic: drop استاد before a مدينة name
  if(!hasAr(v))return v.toUpperCase();const k=v.replace(/\s+/g,' ');return (STADIUM_EN[k]||'').toUpperCase();}
 function weekdayAr(ds){const d=new Date(ds+'T00:00:00');return isNaN(d)?'':d.toLocaleDateString('ar-u-nu-latn',{weekday:'long'});}
 function ddmm(ds){const d=new Date(ds+'T00:00:00');return isNaN(d)?'':`${d.getDate()}/${d.getMonth()+1}`;}
@@ -527,8 +527,8 @@ function drawTable(c,o){
 const GRAD=[[0,'#ffffff'],[0.5,'#ffffff'],[1,'#a3c1ff']];
 const nameCol=t=>(t&&t.nameColor)||(lum((t&&t.color)||'#444')>150?'#0d1d4a':'#ffffff');
 // Card specs measured from the PSDs (design pixels, relative to the card's top-left).
-const SPEC_DAY={fix:{city:378,citySize:42,stad:425,stadSize:26,time:500,timeSize:80},w:647,boxH:325,r:48,crestCy:131.5,crest:209,nameBase:291,nameSize:33.4,cityBase:386,citySize:44,timeBase:482,timeSize:86,scoreBase:471,scoreSize:154,hx:162,ax:486,dash:[304,414,41,20]};
-const SPEC_MWF={fix:{city:402,citySize:40,stad:443,stadSize:25,time:508,timeSize:64},w:699,boxH:350,r:42,crestCy:145,crest:216,nameBase:318,nameSize:41.4,cityBase:414,citySize:42.8,timeBase:479,timeSize:70};
+const SPEC_DAY={fix:{city:376,citySize:42,stad:428,stadSize:33,time:506,timeSize:78},w:647,boxH:325,r:48,crestCy:131.5,crest:209,nameBase:291,nameSize:33.4,cityBase:386,citySize:44,timeBase:482,timeSize:86,scoreBase:471,scoreSize:154,hx:162,ax:486,dash:[304,414,41,20]};
+const SPEC_MWF={fix:{city:398,citySize:40,stad:446,stadSize:32,time:514,timeSize:62},w:699,boxH:350,r:42,crestCy:145,crest:216,nameBase:318,nameSize:41.4,cityBase:414,citySize:42.8,timeBase:479,timeSize:70};
 const SPEC_MWR={w:688,boxH:345,r:42,crestCy:141.5,crest:212,nameBase:313,nameSize:41.4,scoreBase:488,scoreSize:148.6,hx:167,ax:499,dash:[309,439,43,19]};
 function vgrad(c,y0,y1,a,b){const g=c.createLinearGradient(0,y0,0,y1);g.addColorStop(0,a);g.addColorStop(1,b);return g;}
 function drawCard(c,m,mode,S_,ar){
