@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>RSL GFX Studio</title>
 <meta name="rsl-site" content="1">
-<meta name="rsl-build" content="1794775206">
+<meta name="rsl-build" content="1794775302">
 <meta name="rsl-pass" content="5492dcdcf24546ce707e4c6e370ab4a0736d0defa0cbbf6f66798e57a309c6a1">
 <meta name="robots" content="noindex,nofollow">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -405,7 +405,8 @@ const STADIUM_EN={'استاد الأمير محمد بن فهد':'Prince Mohamme
  'ملعب الإنماء بمدينة الملك عبدالله الرياضية':'Alinma Stadium','مدينة الأمير فيصل بن فهد الرياضية':'Prince Faisal bin Fahd Sports City','ملعب نادي الحزم':'Al Hazem Club Stadium',
  'مدينة الأمير عبدالله الفيصل الرياضية':'Prince Abdullah Al Faisal Sports City','ميدان تمويل الأولى':'Tamweel Aloula Arena','ملعب مدينة الأمير عبدالله بن جلوي الرياضية':'Prince Abdullah bin Jalawi Sports City',
  'استاد مدينة الملك عبدالله الرياضية':'King Abdullah Sports City','ملعب الأمير سعود بن جلوي':'Prince Saud bin Jalawi Stadium'};
-function stadiumOf(m,ar){const v=(m.venue||'').replace(/\([^)]*\)\s*$/,'').trim();if(!v)return '';if(ar)return hasAr(v)?v.replace(/^(استاد|ملعب)\s+(?=مدينة)/,''):''; // Arabic: drop استاد / ملعب before a مدينة name
+const STADIUM_AR={'ملعب الإنماء بمدينة الملك عبدالله الرياضية':'ملعب الإنماء'}; // shorter Arabic names
+function stadiumOf(m,ar){const v=(m.venue||'').replace(/\([^)]*\)\s*$/,'').trim();if(!v)return '';if(ar){if(!hasAr(v))return '';const k=v.replace(/\s+/g,' ');return STADIUM_AR[k]||k.replace(/^(استاد|ملعب)\s+(?=مدينة)/,'');} // Arabic: drop استاد / ملعب before a مدينة name
  if(!hasAr(v))return v.toUpperCase();const k=v.replace(/\s+/g,' ');return (STADIUM_EN[k]||'').toUpperCase();}
 function weekdayAr(ds){const d=new Date(ds+'T00:00:00');return isNaN(d)?'':d.toLocaleDateString('ar-u-nu-latn',{weekday:'long'});}
 function ddmm(ds){const d=new Date(ds+'T00:00:00');return isNaN(d)?'':`${d.getDate()}/${d.getMonth()+1}`;}
