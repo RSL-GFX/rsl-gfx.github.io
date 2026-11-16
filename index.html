@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>RSL GFX Studio</title>
 <meta name="rsl-site" content="1">
-<meta name="rsl-build" content="1794837230">
+<meta name="rsl-build" content="1794837387">
 <meta name="rsl-pass" content="5492dcdcf24546ce707e4c6e370ab4a0736d0defa0cbbf6f66798e57a309c6a1">
 <meta name="robots" content="noindex,nofollow">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -825,8 +825,8 @@ function drawAch(c,o,top){
   const bh=140+contentH+(SL.length?72:62),s=(o.achBoxS||100)/100,top0=84+(o.achBoxY||0);
   c.save();c.translate(540,top0);c.scale(s,s);c.translate(-540,0); // local: box top at y=0
   // soft shadow drawn here (not stretched from the art), then the box itself from the opaque part of the art
-  c.save();c.shadowColor='rgba(0,0,0,0.55)';c.shadowBlur=70;c.shadowOffsetY=18;rr(c,540-bw/2+4,4,bw-8,bh-8,56);c.fillStyle='rgba(10,14,24,0.9)';c.fill();c.restore();
-  if(bx){c.save();rr(c,540-bw/2,0,bw,bh,58);c.clip();nineSlice(c,bx,140,84,938,395,80,540-bw/2,0,540+bw/2,bh);c.restore();}
+  c.save();c.shadowColor='rgba(0,0,0,0.55)';c.shadowBlur=70;c.shadowOffsetY=18;rr(c,540-bw/2+14,14,bw-28,bh-28,44);c.fillStyle='#0b0f17';c.fill();c.restore(); // shadow source sits fully inside the box, so no dark ring shows at the edges
+  if(bx){c.save();rr(c,540-bw/2,0,bw,bh,58);c.clip();nineSlice(c,bx,150,94,928,385,80,540-bw/2,0,540+bw/2,bh);c.restore();}
   if(rl)contain(c,rl,539,2,116,103);
   drawText(140);c.restore();
   const cs=cutSrc(),p=cs&&img(cs);if(p)cover(c,p,0,0,W,H,o.photoY,o.photoZ,o.photoX); // the player in front of the box
