@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>RSL GFX Studio</title>
 <meta name="rsl-site" content="1">
-<meta name="rsl-build" content="1794830813">
+<meta name="rsl-build" content="1794831038">
 <meta name="rsl-pass" content="5492dcdcf24546ce707e4c6e370ab4a0736d0defa0cbbf6f66798e57a309c6a1">
 <meta name="robots" content="noindex,nofollow">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -734,12 +734,14 @@ function drawThumb(c,o){
  const pn=img(A.panelThumb);c.save();rr(c,-200,0,1335+200,H,[0,150,150,0]);c.clip();if(pn)c.drawImage(pn,0,0,1335,H);else{c.fillStyle='#0b0f17';c.fillRect(0,0,1335,H);}c.restore();
  const rl=img(A.rsl);if(rl)contain(c,rl,191.5,172.5,213,189);
  const title=(o.title||'HIGHLIGHTS').toUpperCase();
- c.save();c.translate(340,216.5);c.scale(1.066,1);const ts=fitSize(c,FT.title,title,109.7,(1290-340)/1.066);gradText(c,title,0,0,FT.title,ts,{stops:GRAD});c.restore();
+ c.save();c.translate(340,216.5);c.scale(1.066,1);const ts=fitSize(c,FT.title,title,109.7,(1290-340)/1.066);gradText(c,title,0,0,FT.title,ts,{stops:[[0,'#fafafa'],[1,'#eff0f2']]});c.restore();
  const m=ftMatch(o);if(!m)return;const ht=team(m.home),at=team(m.away);
  [[ht,502,m.hs],[at,1209,m.as]].forEach(([t,y,sc])=>{
   rr(c,85,y,425,421,46);c.fillStyle=(t&&t.color)||'#444';c.fill();
   const cs=isTile(t,'logo')?322/TILE:322;contain(c,img(logoColor(t)),297.5,y+210.5,cs,cs);
-  if(isPlayed(m)){c.save();c.translate(921,y+471);c.scale(1.066,1);txt(c,String(sc),0,0,FT.num,708,'#ffffff','center','alphabetic',760/1.066);c.restore();}});
+  if(isPlayed(m)){c.save();c.translate(921,y+471);c.scale(1.066,1);
+   const g=c.createLinearGradient(-240,0,240,-520);g.addColorStop(0,'#ffffff');g.addColorStop(0.45,'#f6f8fd');g.addColorStop(1,'#d6e4ff'); // white bottom-left to pale blue top-right, as in the PSD
+   txt(c,String(sc),0,0,FT.num,708,g,'center','alphabetic',760/1.066);c.restore();}});
 }
 const TEMPLATES={
  table:{name:'Table',desc:'League table',W:TB.W,H:TB.H,draw:drawTable,table:true},
