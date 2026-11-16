@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>RSL GFX Studio</title>
 <meta name="rsl-site" content="1">
-<meta name="rsl-build" content="1794832513">
+<meta name="rsl-build" content="1794832911">
 <meta name="rsl-pass" content="5492dcdcf24546ce707e4c6e370ab4a0736d0defa0cbbf6f66798e57a309c6a1">
 <meta name="robots" content="noindex,nofollow">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -197,6 +197,12 @@ body.team #nav{display:none}
       <label class="f" id="o-src-wrap"><span>Table source</span><select id="o-src"><option value="official">Official SAFF table (synced)</option><option value="calc">Calculated from results here</option></select></label>
       <label class="f"><span id="o-title-lbl">Title (leave empty for automatic)</span><input type="text" id="o-title" placeholder="Automatic"></label>
       <label class="f" id="o-daylbl-wrap"><span>Day label (leave empty for automatic)</span><input type="text" id="o-daylbl" placeholder="Automatic"></label>
+      <div id="o-cmp-wrap">
+        <div id="o-cmp-players"></div>
+        <label class="f"><span>Stats</span></label><div id="o-cmp-rows"></div>
+        <div class="btns" style="margin-top:8px"><button class="btn sm" id="o-cmp-add" type="button">+ Add row</button></div>
+        <div class="btns"><label class="btn sm">Photo · player 1<input type="file" accept="image/*" data-slot="cmp1" hidden></label><label class="btn sm">Photo · player 2<input type="file" accept="image/*" data-slot="cmp2" hidden></label></div>
+      </div>
       <div id="o-gs-wrap">
         <div class="row"><label class="f"><span>Players</span><select id="o-gsn"><option value="5">Top 5</option><option value="4">Top 4</option><option value="3">Top 3</option><option value="2">Top 2</option></select></label>
         <label class="f"><span>Photos</span><select id="o-gssplit"><option value="0">One photo</option><option value="1">One per player</option></select></label></div>
@@ -435,8 +441,8 @@ async function resizeImage(file,max,type,q){const src=await readFile(file);const
  c.getContext('2d').drawImage(im,0,0,c.width,c.height);return c.toDataURL(type||'image/png',q||0.9);}
 const A={tableBg:'assets/table_bg.jpg',rsl:'assets/rsl_logo.png',panel:'assets/panel_day.jpg',panelMW:'assets/panel_mw.jpg',
  ftBox:'assets/ft_box.png',ftBoxTall:'assets/ft_box_tall.png',
- panelT4:'assets/panel_top4.jpg',panelGS:'assets/panel_gs.webp',panelThumb:'assets/panel_thumb.jpg',
- photo:{gs:'assets/photo_gs.jpg',gs1:'assets/photo_gs.jpg',gs2:'assets/photo_gs.jpg',gs3:'assets/photo_gs.jpg',gs4:'assets/photo_gs.jpg',gs5:'assets/photo_gs.jpg',top4:'assets/photo_top4.jpg',bot4:'assets/photo_top4.jpg',thumb:'assets/photo_thumb.jpg',ft:'assets/photo_ft.jpg',dayfix:'assets/photo_fixtures.jpg',dayres:'assets/photo_results.jpg',mwfix:'assets/photo_mw_fixtures.jpg',mwres:'assets/photo_mw_results.jpg'}};
+ panelT4:'assets/panel_top4.jpg',panelCmp:'assets/panel_cmp.jpg',panelGS:'assets/panel_gs.webp',panelThumb:'assets/panel_thumb.jpg',
+ photo:{cmp1:'assets/photo_cmp1.jpg',cmp2:'assets/photo_cmp2.jpg',gs:'assets/photo_gs.jpg',gs1:'assets/photo_gs.jpg',gs2:'assets/photo_gs.jpg',gs3:'assets/photo_gs.jpg',gs4:'assets/photo_gs.jpg',gs5:'assets/photo_gs.jpg',top4:'assets/photo_top4.jpg',bot4:'assets/photo_top4.jpg',thumb:'assets/photo_thumb.jpg',ft:'assets/photo_ft.jpg',dayfix:'assets/photo_fixtures.jpg',dayres:'assets/photo_results.jpg',mwfix:'assets/photo_mw_fixtures.jpg',mwres:'assets/photo_mw_results.jpg'}};
 const ASSET_V='11'; // bump when crest files change so browsers don't keep old copies
 const logoColor=t=>t?(t.logo||(KNOWN.has(t.id)?`assets/logos/${t.id}_c.png?v=${ASSET_V}`:null)):null;
 // Built-in crests are full tiles from the club-logos file (crest ≈74% of the tile, as the designer sized them).
@@ -457,6 +463,7 @@ const BUNDLED=[
  {fam:'LamaSans-Light',url:'assets/fonts/LamaSans-Light.otf',weight:'300'},
  {fam:'RSL-Num',url:'assets/fonts/ExpandedNumbers.otf',weight:'700'},
  {fam:'RSL-NumIt',url:'assets/fonts/ExpandedNumbers-Italic.otf',weight:'900'},
+ {fam:'LamaSans-Regular',url:'assets/fonts/LamaSans-Regular.ttf',weight:'400'},
  {fam:'RSL-Bold',url:'assets/fonts/LamaSans-Bold.ttf',weight:'700'}
 ];
 // Every font used by the PSDs is bundled; this list is shown on the Fonts & Settings tab.
@@ -774,6 +781,32 @@ function drawGS(c,o){
   txt(c,String(g.goals??''),0,0,FT.score,NS,gr,'center','alphabetic',2*(W-60-2608)/1.066);c.restore();
  }
 }
+/* ---- Player comparison (cmp psd, 2112 x 2640). Rows can be added/removed: the box grows upwards. Arabic is the mirror. ---- */
+function drawCmp(c,o){
+ const W=2112,H=2640,ar=o.lang==='ar',X=v=>ar?W-v:v,C=O.cmp,N=Math.max(1,C.rows.length),PITCH=158.2,sh=(N-3)*PITCH;c.direction='ltr';
+ c.fillStyle='#05080e';c.fillRect(0,0,W,H);
+ // photos: player 1 on the left (on the right in Arabic)
+ [['cmp1',0],['cmp2',1]].forEach(([k,j])=>{const x=(ar?1-j:j)*1056;cover(c,img(photoSrc(k)),x,0,1056,H,o.photoY,o.photoZ,o.photoX);});
+ const top=1930-sh;
+ c.save();c.shadowColor='rgba(0,0,0,0.55)';c.shadowBlur=60;c.shadowOffsetY=-10;rr(c,133,top,1844,H-top+200,[40,40,0,0]);c.fillStyle='#0b0f17';c.fill();c.restore();
+ const pn=img(A.panelCmp);c.save();rr(c,133,top,1844,H-top+200,[40,40,0,0]);c.clip();if(pn){if(ar){c.translate(W,0);c.scale(-1,1);}c.drawImage(pn,133,0,1844,H);}c.restore();
+ // club tiles + names
+ C.p.forEach((pl,j)=>{const t=team(pl.team),left=(ar?1-j:j)===0;const tx=left?133:1815;
+  rr(c,tx,top,163,153,left?[40,0,40,0]:[0,40,0,40]);c.fillStyle=(t&&t.color)||'#444';c.fill();
+  const cs=isTile(t,'logo')?96/TILE:96;contain(c,img(logoColor(t)),tx+81.5,top+76.5,cs,cs);
+  const cx=left?576:1547,nm=ar?(pl.ar||pl.en||''):(pl.en||'').toUpperCase();
+  if(ar){c.direction='rtl';txt(c,nm,cx,top+104,FT.arTitle,64,'#ffffff','center','alphabetic',540);c.direction='ltr';}
+  else{c.save();try{c.letterSpacing='-3.3px';}catch(e){}txt(c,nm,cx,top+104,FT.title,65.5,'#ffffff','center','alphabetic',560);c.restore();}});
+ const rl=img(A.rsl);if(rl)contain(c,rl,1055.5,top+50,199,176);
+ // rows
+ C.rows.forEach((r,i)=>{const by=2234.6-sh+i*PITCH;
+  if(i>0){const ly=by-PITCH+24;c.fillStyle='rgba(60,72,98,0.9)';c.fillRect(419,ly,1273,8);}
+  c.save();try{c.letterSpacing='-6.4px';}catch(e){}
+  const ng=vgrad(c,by-95,by,'#ffffff','#cfdaf3');txt(c,String((ar?r.r:r.l)??''),571.3,by,FT.num,128,ng,'center','alphabetic',300);txt(c,String((ar?r.l:r.r)??''),1541.8,by,FT.num,128,ng,'center','alphabetic',300);c.restore();
+  const lb=ar?(r.ar||r.en||''):(r.en||'').toUpperCase();
+  if(ar){c.direction='rtl';txt(c,lb,1056,by-36,FT.arMed,62,'#eef0f4','center','alphabetic',600);c.direction='ltr';}
+  else{c.save();c.translate(1056,by-34);c.scale(0.7,1);txt(c,lb,0,0,{fam:'"LamaSans-Regular","LamaSans-Medium",sans-serif',w:400,st:'normal'},80,'#eef0f4','center','alphabetic',600/0.7);c.restore();}});
+}
 /* ---- Highlights thumbnail (thumbnail psd, 3840 x 2160, English only) ---- */
 function drawThumb(c,o){
  const W=3840,H=2160;c.direction='ltr';c.fillStyle='#05080e';c.fillRect(0,0,W,H);
@@ -797,6 +830,7 @@ const TEMPLATES={
  dayfix:{hidden:true,name:'Day fixtures',desc:'One match day',W:CD.W,H:CD.H,draw:(c,o)=>drawDay(c,o,'fixtures'),fix:true,day:true},
  dayres:{hidden:true,name:'Day results',desc:'One match day',W:CD.W,H:CD.H,draw:(c,o)=>drawDay(c,o,'results'),day:true},
  ft:{name:'Full time',desc:'Post or thumbnail',W:2160,H:2700,draw:drawFT},
+ cmp:{name:'Comparison',desc:'Two players',W:2112,H:2640,draw:drawCmp},
  gs:{name:'Top scorers',desc:'Goalscorers',W:3168,H:3960,draw:drawGS},
  thumb:{hidden:true,name:'Thumbnail',desc:'Highlights',W:3840,H:2160,draw:drawThumb,enOnly:true},
  top4:{name:'Top 4',desc:'Short table',W:2160,H:2700,draw:(c,o)=>drawShort(c,o,false),hidden:true,table:true},
@@ -813,7 +847,8 @@ function drawTo(canvas,o,scale){const T=TEMPLATES[o.tpl];const k=scale||(1080/T.
  const c=canvas.getContext('2d');c.setTransform(k,0,0,k,0,0);c.imageSmoothingQuality='high';T.draw(c,o);c.setTransform(1,0,0,1,0,0);}
 
 /* ============ studio UI ============ */
-const O={gsNames:{en:[],ar:[]},gsN:5,gsSplit:false,lang:'en',tpl:'mwfix',ftMatch:'',mw:'auto',day:'auto',title:'',dayLabel:'',src:'official',size:'1',photoY:30,photoZ:100,photoX:50};
+const O={cmp:{p:[{team:'hil',en:'Neves',ar:'نيفيز'},{team:'sha',en:'Carrasco',ar:'كاراسكو'}],
+ rows:[{en:'Games',ar:'المباريات',l:'12',r:'9'},{en:'Goals',ar:'الأهداف',l:'2',r:'6'},{en:'Assists',ar:'صناعة الأهداف',l:'7',r:'4'}]},gsNames:{en:[],ar:[]},gsN:5,gsSplit:false,lang:'en',tpl:'mwfix',ftMatch:'',mw:'auto',day:'auto',title:'',dayLabel:'',src:'official',size:'1',photoY:30,photoZ:100,photoX:50};
 function resolvedMw(){if(O.mw!=='auto')return +O.mw;if(TEMPLATES[O.tpl].fix)return nextMw();if(TABLE_GROUP.includes(O.tpl)&&S.official&&S.official.mw)return S.official.mw;return lastPlayedMw();}
 function resolvedDay(mw){const days=mwDays(mw);if(O.day!=='auto'&&days.includes(O.day))return O.day;const ms=mwMatches(mw);
  if(TEMPLATES[O.tpl].fix){const u=ms.find(m=>!isPlayed(m));return u?u.date:days[0];}
@@ -828,7 +863,7 @@ function renderStudio(){
  const days=mwDays(mw);const rd=resolvedDay(mw);
  $('#o-day').innerHTML=`<option value="auto">Automatic (${esc(weekday(rd))} ${esc(rd||'')})</option>`+days.map(d=>{const n=mwMatches(mw).filter(m=>m.date===d).length;return `<option value="${d}" ${d===O.day?'selected':''}>${weekday(d)} ${d} · ${n} match${n>1?'es':''}</option>`}).join('');
  const isDay=!!TEMPLATES[O.tpl].day;$('#o-day-wrap').style.display=isDay?'':'none';$('#o-daylbl-wrap').style.display=(isTG||isThumb)?'none':'';$('#o-daylbl-wrap').querySelector('span').textContent=isDay?'Day label (leave empty for automatic)':'Right-hand label (leave empty for automatic)';$('#o-photo-wrap').style.display=isT?'none':'';
- $('#o-lang').value=O.lang;renderGS();$('#o-lang-wrap').style.display=isThumb?'none':'';{const G=groupOf(O.tpl);$('#o-tsize-wrap').style.display=G?'':'none';if(G){$('#o-tsize-l').textContent=G.label;$('#o-tsize').innerHTML=G.items.map(([k,l])=>`<option value="${k}" ${k===O.tpl?'selected':''}>${esc(l)}</option>`).join('');}}$('#o-src-wrap').style.display=isTG?'':'none';$('#o-src').value=O.src;$('#o-photo-y').value=O.photoY;$('#o-photo-z').value=O.photoZ;$('#o-photo-x').value=O.photoX;syncPhotoX();
+ $('#o-lang').value=O.lang;renderGS();renderCmp();$('#o-lang-wrap').style.display=isThumb?'none':'';{const G=groupOf(O.tpl);$('#o-tsize-wrap').style.display=G?'':'none';if(G){$('#o-tsize-l').textContent=G.label;$('#o-tsize').innerHTML=G.items.map(([k,l])=>`<option value="${k}" ${k===O.tpl?'selected':''}>${esc(l)}</option>`).join('');}}$('#o-src-wrap').style.display=isTG?'':'none';$('#o-src').value=O.src;$('#o-photo-y').value=O.photoY;$('#o-photo-z').value=O.photoZ;$('#o-photo-x').value=O.photoX;syncPhotoX();
  $('#b-zip').style.display=isDay?'':'none';
  const AR=O.lang==='ar';
  $('#o-title').placeholder=isThumb?'HIGHLIGHTS':isTG?(AR?`الجولة ${tableRows(opts()).mw}`:`MW ${tableRows(opts()).mw}`):O.tpl==='dayfix'?(AR?`الجولة ${mw}`:`MW ${mw}`):O.tpl==='mwfix'?(AR?'المباريات':'FIXTURES'):(AR?'النتائج':'RESULTS');$('#o-daylbl').placeholder=isDay?(AR?weekdayAr(rd):weekday(rd)):(AR?`الجولة ${mw}`:`MW ${mw}`);
@@ -836,6 +871,7 @@ function renderStudio(){
  if(isTG){const T=tableRows(o);hint=(O.tpl!=='table'?(O.tpl==='top4'?'Top 4 of the ':'Bottom 4 of the '):'')+T.official?`Official SAFF table after matchweek ${T.mw}${S.sync&&S.sync.at?', synced '+new Date(S.sync.at).toLocaleString():''}.`:`Calculated from every result up to matchweek ${o.mw} (points, goal difference, goals scored). Set Matchweek to Automatic to use the official SAFF table.`;}
  else if(!isDay){const ms=mwMatches(o.mw);hint=`${ms.length} matches in matchweek ${o.mw}${ms.some(m=>!isPlayed(m))&&O.tpl==='mwres'?' (unplayed matches show their kick-off time)':''}.`;}
  else{const n=dayMatches(o).length;hint=`${n} match${n===1?'':'es'} on ${weekday(o.day)} ${o.day||''}. Cards resize to fit the number of matches.`;}
+ if(O.tpl==='cmp')hint='Type the players and stats. Add or remove rows: the box grows or shrinks to fit.';
  if(O.tpl==='gs'){const sc=S.scorers;hint=sc&&sc.list&&sc.list.length?`Top scorers from spl.com.sa${sc.at?', updated '+new Date(sc.at).toLocaleString():''}.`:'No goalscorer stats yet. They load with the next spl.com.sa sync.';}
  if(O.tpl==='ft'){const m=ftMatch(o);hint=m&&!isPlayed(m)?'This match has no result yet; the score appears once it is played.':'Pick the match, then type the scorers. The score comes from the synced results.';}
  $('#o-hint').textContent=hint;
@@ -851,6 +887,16 @@ function renderFT(o){const on=O.tpl==='ft'||O.tpl==='thumb';$('#o-ft-wrap').styl
   $('#o-hsc').dir=$('#o-asc').dir=F?'rtl':'ltr';
   $('#o-hsc').placeholder=F?(cur.homeScorers||'رونالدو 64'):'Ronaldo 64';$('#o-asc').placeholder=F?(cur.awayScorers||'رونالدو 64'):'Ronaldo 64';
   if(document.activeElement!==$('#o-hsc'))$('#o-hsc').value=cur['homeScorers'+F]||'';if(document.activeElement!==$('#o-asc'))$('#o-asc').value=cur['awayScorers'+F]||'';}}
+function renderCmp(){const on=O.tpl==='cmp';$('#o-cmp-wrap').style.display=on?'':'none';$('#o-mw').closest('label').style.display=on?'none':'';if(!on)return;
+ $('#o-daylbl-wrap').style.display='none';$('#o-title').closest('label').style.display='none';$('#o-photo').closest('.btns').style.display='none';
+ if($('#o-cmp-wrap').contains(document.activeElement))return;const L=O.lang,C=O.cmp;
+ $('#o-cmp-players').innerHTML=C.p.map((p,j)=>`<div class="row"><label class="f" style="flex:0 0 42%"><span>Player ${j+1} club</span><select data-cp="${j}" data-f="team">${S.teams.map(t=>`<option value="${t.id}" ${t.id===p.team?'selected':''}>${esc(t.en)}</option>`).join('')}</select></label><label class="f"><span>Name${L==='ar'?' (Arabic)':''}</span><input type="text" data-cp="${j}" data-f="${L}" ${L==='ar'?'dir="rtl"':''} value="${esc(p[L]||'')}"></label></div>`).join('');
+ $('#o-cmp-rows').innerHTML=C.rows.map((r,i)=>`<div class="row" style="margin-top:6px"><input type="text" data-cr="${i}" data-f="l" value="${esc(r.l)}" style="flex:0 0 18%;text-align:center"><input type="text" data-cr="${i}" data-f="${L}" ${L==='ar'?'dir="rtl"':''} value="${esc(r[L]||'')}" placeholder="${L==='ar'?'الإحصائية':'Stat'}"><input type="text" data-cr="${i}" data-f="r" value="${esc(r.r)}" style="flex:0 0 18%;text-align:center"><button class="btn sm danger" data-del="${i}" type="button" style="flex:0 0 auto" title="Remove row">×</button></div>`).join('');}
+$('#o-cmp-wrap').addEventListener('input',e=>{const d=e.target.dataset;if(d.cp!=null)O.cmp.p[+d.cp][d.f]=e.target.value;else if(d.cr!=null)O.cmp.rows[+d.cr][d.f]=e.target.value;else return;scheduleDraw();});
+$('#o-cmp-wrap').addEventListener('change',e=>{const d=e.target.dataset;if(d.cp!=null&&d.f==='team'){O.cmp.p[+d.cp].team=e.target.value;scheduleDraw();}
+ const k=d.slot;if(k&&e.target.files&&e.target.files[0]){resizeImage(e.target.files[0],3400,'image/jpeg',0.86).then(u=>{PHOTO_MEM[k]=u;if(!lsSet('rsl-photo-'+k,u))toast('This photo will be used now but is too large to keep after you reload.');e.target.value='';renderStudio();});}});
+$('#o-cmp-wrap').addEventListener('click',e=>{const b=e.target.closest('[data-del]');if(b){if(O.cmp.rows.length>1){O.cmp.rows.splice(+b.dataset.del,1);document.activeElement.blur();renderStudio();}else toast('Keep at least one row.');}});
+$('#o-cmp-add').onclick=()=>{if(O.cmp.rows.length>=8){toast('Up to 8 rows.');return;}O.cmp.rows.push({en:'',ar:'',l:'0',r:'0'});renderStudio();};
 function renderGS(){const on=O.tpl==='gs';$('#o-gs-wrap').style.display=on?'':'none';if(!on)return;
  $('#o-daylbl-wrap').style.display='none';$('#o-title').closest('label').style.display='';$('#o-title').placeholder=O.lang==='ar'?'ترتيب الهدافين':'TOP GOAL SCORERS';
  renderGSNames();
@@ -893,10 +939,11 @@ async function saveBlob(name,blob){
  if(SITE){const u=URL.createObjectURL(blob);const a=document.createElement('a');a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000);toast('Downloaded '+name);return;}
  const url=URL.createObjectURL(blob);const isImg=blob.type.startsWith('image/');
  openDlg(`<h2>${esc(name)}</h2><p class="note" style="margin-top:0">${isImg?'Right-click the image (or long-press on a phone) and choose Save.':'Click the link to download.'}</p>${isImg?`<img src="${url}" alt="">`:`<p><a class="btn pri" href="${url}" download="${esc(name)}">Download ${esc(name)}</a></p>`}<div class="btns"><button class="btn" data-close>Close</button></div>`);}
-function collectImgs(o){const l=[A.tableBg,A.rsl,A.panel,A.panelMW,A.ftBox,A.ftBoxTall,A.panelT4,A.panelThumb,A.panelGS,...Object.keys(A.photo).map(photoSrc)];S.teams.forEach(t=>{l.push(logoColor(t),logoMono(t));});return l.filter(Boolean);}
+function collectImgs(o){const l=[A.tableBg,A.rsl,A.panel,A.panelMW,A.ftBox,A.ftBoxTall,A.panelT4,A.panelCmp,A.panelThumb,A.panelGS,...Object.keys(A.photo).map(photoSrc)];S.teams.forEach(t=>{l.push(logoColor(t),logoMono(t));});return l.filter(Boolean);}
 function exportScale(o){return 2160/TEMPLATES[o.tpl].W;} // every export is 2160 px wide (2x of 1080)
 function fileName(o){return fileName0(o)+(o.lang==='ar'?'_AR':'');}
-function fileName0(o){if(o.tpl==='gs')return `RSL_TopScorers_Top${o.gsN}`;
+function fileName0(o){if(o.tpl==='cmp')return `RSL_Comparison_${(O.cmp.p[0].en||'P1').replace(/\W+/g,'')}_${(O.cmp.p[1].en||'P2').replace(/\W+/g,'')}`;
+ if(o.tpl==='gs')return `RSL_TopScorers_Top${o.gsN}`;
  if(o.tpl==='thumb'){const m=ftMatch(o);return `RSL_Thumbnail_MW${pad2(o.mw)}_${m?(team(m.home)?.short+'-'+team(m.away)?.short):''}`;}
  if(o.tpl==='top4'||o.tpl==='bot4')return `RSL_Table_${o.tpl==='top4'?'Top4':'Bottom4'}_MW${pad2(tableRows(o).mw)}`;
  if(o.tpl==='ft'){const m=ftMatch(o);return `RSL_FullTime_MW${pad2(o.mw)}_${m?(team(m.home)?.short+'-'+team(m.away)?.short):''}`;}
