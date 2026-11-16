@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>RSL GFX Studio</title>
 <meta name="rsl-site" content="1">
-<meta name="rsl-build" content="1794829876">
+<meta name="rsl-build" content="1794829994">
 <meta name="rsl-pass" content="5492dcdcf24546ce707e4c6e370ab4a0736d0defa0cbbf6f66798e57a309c6a1">
 <meta name="robots" content="noindex,nofollow">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -533,8 +533,8 @@ function drawTable(c,o){
 const GRAD=[[0,'#ffffff'],[0.5,'#ffffff'],[1,'#a3c1ff']];
 const nameCol=t=>(t&&t.nameColor)||(lum((t&&t.color)||'#444')>150?'#0d1d4a':'#ffffff');
 // Card specs measured from the PSDs (design pixels, relative to the card's top-left).
-const SPEC_DAY={fix:{city:384,citySize:42,time:464,timeSize:76,stad:516},w:647,boxH:325,r:48,crestCy:131.5,crest:209,nameBase:291,nameSize:33.4,cityBase:386,citySize:44,timeBase:482,timeSize:86,scoreBase:471,scoreSize:154,hx:162,ax:486,dash:[304,414,41,20]};
-const SPEC_MWF={fix:{city:410,citySize:40,time:480,timeSize:60,stad:528},w:699,boxH:350,r:42,crestCy:145,crest:216,nameBase:318,nameSize:41.4,cityBase:414,citySize:42.8,timeBase:479,timeSize:70};
+const SPEC_DAY={fix:{city:384,citySize:42,time:464,timeSize:76,stad:522,stadEn:44,stadAr:44},w:647,boxH:325,r:48,crestCy:131.5,crest:209,nameBase:291,nameSize:33.4,cityBase:386,citySize:44,timeBase:482,timeSize:86,scoreBase:471,scoreSize:154,hx:162,ax:486,dash:[304,414,41,20]};
+const SPEC_MWF={w:699,boxH:350,r:42,crestCy:145,crest:216,nameBase:318,nameSize:41.4,cityBase:414,citySize:42.8,timeBase:479,timeSize:70};
 const SPEC_MWR={w:688,boxH:345,r:42,crestCy:141.5,crest:212,nameBase:313,nameSize:41.4,scoreBase:488,scoreSize:148.6,hx:167,ax:499,dash:[309,439,43,19]};
 function vgrad(c,y0,y1,a,b){const g=c.createLinearGradient(0,y0,0,y1);g.addColorStop(0,a);g.addColorStop(1,b);return g;}
 function drawCard(c,m,mode,S_,ar){
@@ -555,14 +555,22 @@ function drawCard(c,m,mode,S_,ar){
   txt(c,String(ar?m.hs:m.as),S_.ax,S_.scoreBase,FT.score,sz,col,'center');
   const [dx,dy,dw,dh]=S_.dash;rr(c,dx,dy,dw,dh,4);c.fillStyle='#e9ebef';c.fill();
  }else if(S_.cityBase){
-  // city, then kick-off time, then the stadium (Lama Sans, up to two lines)
-  const st=stadiumOf(m,ar),L=S_.fix;
-  txt(c,(ar?cityAr(m):cityOf(m))||' ',S_.w/2,L.city-(ar?4:0),FT.card,L.citySize,vgrad(c,L.city-L.citySize,L.city,'#ffffff','#c9ccd3'),'center','alphabetic',S_.w-40);
-  if(st){const size=stadSize(c,ar,S_.w-40);c.direction=ar?'rtl':'ltr';
-   const sz=txt(c,st,S_.w/2,L.stad-(ar?4:0),FT.arMed,size,'#b8bfcd','center','alphabetic',S_.w-40);
-   c.lineWidth=sz*0.045;c.lineJoin='round';c.strokeStyle='#b8bfcd';c.strokeText(st,S_.w/2,L.stad-(ar?4:0));}
-  c.direction='ltr';
-  txt(c,m.time||'TBC',S_.w/2,L.time,FT.num,L.timeSize,vgrad(c,L.time-L.timeSize*0.7,L.time,'#ffffff','#c9ccd3'),'center','alphabetic',S_.w-40);
+  if(S_.fix){ // Day fixtures: city, kick-off time, then the stadium (Lama Sans, up to two lines)
+   const st=stadiumOf(m,ar),L=S_.fix;
+   txt(c,(ar?cityAr(m):cityOf(m))||' ',S_.w/2,L.city-(ar?4:0),FT.card,L.citySize,vgrad(c,L.city-L.citySize,L.city,'#ffffff','#c9ccd3'),'center','alphabetic',S_.w-40);
+   if(st){const size=ar?L.stadAr:L.stadEn,maxW=S_.w-40;c.direction=ar?'rtl':'ltr';setF(c,FT.arMed,size);
+    let lines=[st];if(c.measureText(st).width>maxW){const w=st.split(' ');let best=null;
+     for(let i=1;i<w.length;i++){const a=w.slice(0,i).join(' '),b=w.slice(i).join(' ');const m2=Math.max(c.measureText(a).width,c.measureText(b).width);if(!best||m2<best[0])best=[m2,a,b];}
+     if(best)lines=[best[1],best[2]];}
+    lines.forEach((ln,i)=>{const y=L.stad+i*size*1.18-(ar?4:0);const sz=txt(c,ln,S_.w/2,y,FT.arMed,size,'#b8bfcd','center','alphabetic',maxW);
+     c.lineWidth=sz*0.045;c.lineJoin='round';c.strokeStyle='#b8bfcd';c.strokeText(ln,S_.w/2,y);});}
+   c.direction='ltr';
+   txt(c,m.time||'TBC',S_.w/2,L.time,FT.num,L.timeSize,vgrad(c,L.time-L.timeSize*0.7,L.time,'#ffffff','#c9ccd3'),'center','alphabetic',S_.w-40);
+  }else{ // MW fixtures: city and kick-off time (as in the PSD)
+   txt(c,(ar?cityAr(m):cityOf(m))||' ',S_.w/2,S_.cityBase-(ar?8:0),FT.card,S_.citySize,vgrad(c,S_.cityBase-S_.citySize,S_.cityBase,'#ffffff','#c9ccd3'),'center','alphabetic',S_.w-40);
+   c.direction='ltr';
+   txt(c,m.time||'TBC',S_.w/2,S_.timeBase,FT.num,S_.timeSize,vgrad(c,S_.timeBase-S_.timeSize*0.7,S_.timeBase,'#ffffff','#c9ccd3'),'center','alphabetic',S_.w-40);
+  }
  }else{c.direction='ltr';
   txt(c,m.time||'TBC',S_.w/2,S_.scoreBase-20,FT.num,S_.scoreSize*0.55,'#ffffff','center','alphabetic',S_.w-40);
  }
@@ -602,7 +610,7 @@ function drawDay(c,o,mode){
  const k=n>4?full/row:({1:1.3,2:1.3,3:1.2,4:1})[n];
  const total=row*k,x0=(CD.W-total)/2,top=Math.max(3290,CD.top-(510*k-510)/2);
  ms.forEach((m,i)=>{const p=ar?n-1-i:i;c.save();c.translate(x0+p*(S_.w+CD.gap)*k,top);c.scale(k,k);
-  const BH=mode==='fixtures'?555:510;rr(c,0,0,S_.w,BH,S_.r);c.fillStyle='rgba(255,255,255,0.055)';c.fill();drawCard(c,m,mode,S_,ar);c.restore();});
+  const BH=mode==='fixtures'?605:510;rr(c,0,0,S_.w,BH,S_.r);c.fillStyle='rgba(255,255,255,0.055)';c.fill();drawCard(c,m,mode,S_,ar);c.restore();});
 }
 /* Whole-matchweek version (FIXTURES & RESULTS psd, 3241 × 4201) */
 const MWP={y:1688,r:200,h:2573,photoH:1900,rsl:[200,1641,358,317]};
@@ -617,8 +625,8 @@ function drawMW(c,o,mode){
   const rows=[];const byDay={};ms.forEach(m=>{(byDay[m.date||'']=byDay[m.date||'']||[]).push(m);});
   Object.keys(byDay).sort().forEach(d=>{const l=byDay[d];for(let i=0;i<l.length;i+=3)rows.push({date:d,first:i===0,ms:l.slice(i,i+3)});});
   const k=Math.min(1,3/rows.length);const S_=SPEC_MWF;
-  rows.forEach((row,i)=>{c.save();c.translate(W/2,2100+i*645*k);c.scale(k,k);c.translate(-W/2,0);
-   rr(c,198,-53,2844,622,80);c.fillStyle='rgba(70,100,160,0.075)';c.fill();c.lineWidth=5;c.strokeStyle='rgba(120,150,215,0.12)';c.stroke();
+  rows.forEach((row,i)=>{c.save();c.translate(W/2,2100+i*625*k);c.scale(k,k);c.translate(-W/2,0);
+   rr(c,198,-53,2844,582,80);c.fillStyle='rgba(70,100,160,0.075)';c.fill();c.lineWidth=5;c.strokeStyle='rgba(120,150,215,0.12)';c.stroke();
    if(row.first){if(!ar){gradText(c,shortDay(row.date),259,214.8,FT.title,100.8,{stops:GRAD});gradText(c,mmdd(row.date),259,301.2,FT.title,100.8,{stops:GRAD});}
     else{const wd=weekdayAr(row.date),dd=ddmm(row.date);c.direction='rtl';const fs=fitSize(c,FT.arTitle,wd,86,330);gradText(c,wd,W-259,200,FT.arTitle,fs,{align:'right',stops:GRAD});c.direction='ltr';
      const ds=fitSize(c,FT.title,dd,92,330);gradText(c,dd,W-259,305,FT.title,ds,{align:'right',stops:GRAD});}}
