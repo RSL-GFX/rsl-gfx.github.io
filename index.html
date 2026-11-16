@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>RSL GFX Studio</title>
 <meta name="rsl-site" content="1">
-<meta name="rsl-build" content="1794832314">
+<meta name="rsl-build" content="1794832416">
 <meta name="rsl-pass" content="5492dcdcf24546ce707e4c6e370ab4a0736d0defa0cbbf6f66798e57a309c6a1">
 <meta name="robots" content="noindex,nofollow">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -768,8 +768,8 @@ function drawGS(c,o){
   const nx=X(1971+287*k),maxW=(W-60)-(1971+287*k);
   if(ar){c.direction='rtl';txt(c,nm,nx,top+131*k,FT.boldAr,98*k,'#ffffff','right','alphabetic',maxW);c.direction='ltr';}
   else{c.save();try{c.letterSpacing=(-0.025*106.6*k).toFixed(1)+'px';}catch(e){}txt(c,nm.toUpperCase(),nx,top+131*k,FT.bold,106.6*k,'#ffffff','left','alphabetic',maxW);c.restore();}
-  const NS=492*k,capH=NS*0.72,a0=top+(188+40)*k,a1=bot-40; // number centred in the space under the name
-  const cx=X(2608),by=Math.max(a0+capH,(a0+a1)/2+capH/2);
+  const NS=492*Math.min(k,1.05),capH=NS*0.72; // number size stays close to Top 5, right under the name
+  const cx=X(2608),by=top+188*k+40+capH;
   c.save();c.translate(cx,by);c.scale(1.066,1);const gr=c.createLinearGradient(-200*k,0,200*k,-380*k);gr.addColorStop(0,'#ffffff');gr.addColorStop(0.45,'#f6f8fd');gr.addColorStop(1,'#d6e4ff');
   txt(c,String(g.goals??''),0,0,FT.score,NS,gr,'center','alphabetic',2*(W-60-2608)/1.066);c.restore();
  }
