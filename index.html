@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>RSL GFX Studio</title>
 <meta name="rsl-site" content="1">
-<meta name="rsl-build" content="1794830121">
+<meta name="rsl-build" content="1794830185">
 <meta name="rsl-pass" content="5492dcdcf24546ce707e4c6e370ab4a0736d0defa0cbbf6f66798e57a309c6a1">
 <meta name="robots" content="noindex,nofollow">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -441,6 +441,7 @@ const photoSrc=k=>PHOTO_MEM[k]||lsGet('rsl-photo-'+k)||A.photo[k];
 // Upload slots cover the faces we don't have complete files for; an uploaded file always takes priority.
 const BUNDLED=[
  {fam:'RSL-TitleNum',url:'assets/fonts/ExpandedNumbers-Italic.otf',weight:'900',range:'U+0030-0039,U+002F,U+003A,U+002E'},
+ {fam:'RSL-ArTitleNum',url:'assets/fonts/ExpandedNumbers.otf',weight:'900',range:'U+0030-0039,U+002F,U+003A,U+002E'},
  {fam:'RSL-Title',url:'assets/fonts/LamaSans-BlackExpandedItalic.ttf',weight:'900'},
  {fam:'LamaSans-ExtraBoldExpanded',url:'assets/fonts/LamaSans-ExtraBoldExpanded.otf',weight:'800'},
  {fam:'LamaSans-BlackExpanded',url:'assets/fonts/LamaSans-BlackExpanded.otf',weight:'900'},
@@ -461,7 +462,7 @@ const FONT_LIST=[
 ];
 const FONT_SLOTS=[];
 const FT={
- arTitle:{fam:'"RSL-TitleNum","LamaSans-BlackExpanded","Readex Pro",sans-serif',w:900,st:'normal'}, // digits from Expanded Numbers Italic, like the English titles
+ arTitle:{fam:'"RSL-ArTitleNum","LamaSans-BlackExpanded","Readex Pro",sans-serif',w:900,st:'normal'}, // digits from Expanded Numbers (upright: Arabic titles aren't italic)
  arMed:{fam:'"LamaSans-Medium","Readex Pro",sans-serif',w:500,st:'normal'},
  arLight:{fam:'"LamaSans-Light","Readex Pro",sans-serif',w:300,st:'normal'},
  title:{fam:'"RSL-TitleNum","RSL-Title","Archivo",sans-serif',w:900,st:'extra-expanded'},
@@ -629,7 +630,7 @@ function drawMW(c,o,mode){
    rr(c,198,-53,2844,582,80);c.fillStyle='rgba(70,100,160,0.075)';c.fill();c.lineWidth=5;c.strokeStyle='rgba(120,150,215,0.12)';c.stroke();
    if(row.first){if(!ar){gradText(c,shortDay(row.date),259,214.8,FT.title,100.8,{stops:GRAD});gradText(c,mmdd(row.date),259,301.2,FT.title,100.8,{stops:GRAD});}
     else{const wd=weekdayAr(row.date),dd=ddmm(row.date);c.direction='rtl';const fs=fitSize(c,FT.arTitle,wd,86,330);gradText(c,wd,W-259,200,FT.arTitle,fs,{align:'right',stops:GRAD});c.direction='ltr';
-     const ds=fitSize(c,FT.title,dd,92,330);gradText(c,dd,W-259,305,FT.title,ds,{align:'right',stops:GRAD});}}
+     const ds=fitSize(c,FT.arTitle,dd,92,330);gradText(c,dd,W-259,305,FT.arTitle,ds,{align:'right',stops:GRAD});}}
    const n=row.ms.length,tot=n*S_.w+(n-1)*90.5,x0=(ar?W-1794:1794)-tot/2;
    row.ms.forEach((m,j)=>{c.save();c.translate(x0+(ar?n-1-j:j)*789.5,0);drawCard(c,m,'fixtures',S_,ar);c.restore();});
    c.restore();});
