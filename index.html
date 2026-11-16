@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>RSL GFX Studio</title>
 <meta name="rsl-site" content="1">
-<meta name="rsl-build" content="1794834443">
+<meta name="rsl-build" content="1794835286">
 <meta name="rsl-pass" content="5492dcdcf24546ce707e4c6e370ab4a0736d0defa0cbbf6f66798e57a309c6a1">
 <meta name="robots" content="noindex,nofollow">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -200,6 +200,8 @@ body.team #nav{display:none}
       <div id="o-ach-wrap">
         <label class="f"><span>Title (Enter for a new line)</span><textarea id="o-ach-t" rows="2"></textarea></label>
         <label class="f"><span>Second line (Enter for a new line)</span><textarea id="o-ach-s" rows="2"></textarea></label>
+        <div id="o-ach-box"><label class="f"><span>Box size</span><input type="range" id="o-ach-bs" min="60" max="130" value="100" style="width:100%"></label>
+        <label class="f"><span>Box position (up / down)</span><input type="range" id="o-ach-by" min="-60" max="700" value="0" style="width:100%"></label></div>
         <div class="btns" id="o-ach-cut"><button class="btn sm pri" id="o-ach-auto" type="button">Cut out player automatically</button><label class="btn sm">Upload my own cut-out<input type="file" accept="image/png,image/webp" data-slot="achP" hidden></label></div>
         <p class="note" id="o-ach-note">Upload the photo with "Upload photo" below: the player is cut out automatically and placed in front of the box. <span id="o-ach-status"></span></p>
       </div>
@@ -788,11 +790,15 @@ function drawGS(c,o){
  }
 }
 /* ---- Achievement (Q psd, 1080 x 1350): box at the bottom, or box at the top with the player cut-out in front ---- */
+// Draw the top box art as a nine-slice so it can take any width and height (corners and shadow stay crisp)
+function nineSlice(c,im,sx0,sy0,sx1,sy1,C,dx0,dy0,dx1,dy1){const k=im.naturalWidth/1080;const S=(a)=>a*k;
+ const xs=[sx0,sx0+C,sx1-C,sx1],ys=[sy0,sy0+C,sy1-C,sy1],xd=[dx0,dx0+C,dx1-C,dx1],yd=[dy0,dy0+C,dy1-C,dy1];
+ for(let i=0;i<3;i++)for(let j=0;j<3;j++){const w=xd[i+1]-xd[i],h=yd[j+1]-yd[j];if(w>0&&h>0)c.drawImage(im,S(xs[i]),S(ys[j]),S(xs[i+1]-xs[i]),S(ys[j+1]-ys[j]),xd[i],yd[j],w,h);}}
 function drawAch(c,o,top){
  const W=1080,H=1350,ar=o.lang==='ar',T=O.ach[ar?'ar':'en']||{};c.direction='ltr';
  c.fillStyle='#05080e';c.fillRect(0,0,W,H);
  cover(c,img(photoSrc(top?'achB':'achA')),0,0,W,H,o.photoY,o.photoZ,o.photoX);
- const L=top?{lx:539,ly:86,lw:116,lh:103,t:224,ts:71.4,s:314,ss:53.5,gap:90,mw:740}:{lx:540.5,ly:1021,lw:137,lh:122,t:1168.6,ts:83.3,s:1261.6,ss:62.5,gap:93,mw:900};
+ const L=top?{ts:71.4,ss:53.5,gap:76,mw:860}:{lx:540.5,ly:1021,lw:137,lh:122,t:1168.6,ts:83.3,s:1261.6,ss:62.5,gap:78,mw:900};
  const tf=ar?FT.arTitle:FT.title,tsz=ar?L.ts:L.ts*0.92,ssz=ar?L.ss:L.ss*0.85;
  // lines: Enter starts a new line; a long single line wraps into two; each line shrinks only if it still doesn't fit
  const prep=(t,f,size,sx)=>{t=String(t||'');if(!ar)t=t.toUpperCase();let ls=t.split(/\n/).map(x=>x.trim()).filter(Boolean);if(!ls.length)return[];
@@ -800,20 +806,26 @@ function drawAch(c,o,top){
   if(ls.length===1&&c.measureText(ls[0]).width*sx>L.mw*1.15){const w=ls[0].split(/\s+/);if(w.length>1){let best=1e9,b=null;for(let j=1;j<w.length;j++){const a1=w.slice(0,j).join(' '),a2=w.slice(j).join(' ');const m=Math.max(c.measureText(a1).width,c.measureText(a2).width);if(m<best){best=m;b=[a1,a2];}}ls=b;}}
   return ls.slice(0,3);};
  const TL=prep(T.t,tf,tsz,1),SL=prep(T.s,FT.arMed,ssz,1.12);
- const tp=tsz*1.16,sp=ssz*1.38,E=Math.max(0,TL.length-1)*tp+Math.max(0,SL.length-1)*sp; // extra height for lines beyond two
- const bx=img(top?A.boxAchB:A.boxAchA);
- if(bx){const k=bx.naturalWidth/W;
-  if(!top){ // box A grows upwards from the bottom
-   c.drawImage(bx,0,0,bx.naturalWidth,1100*k,0,-E,W,1100);c.drawImage(bx,0,1100*k,bx.naturalWidth,100*k,0,1100-E,W,100+E);c.drawImage(bx,0,1200*k,bx.naturalWidth,150*k,0,1200,W,150);}
-  else{ // box B grows downwards from the top
-   c.drawImage(bx,0,0,bx.naturalWidth,250*k,0,0,W,250);c.drawImage(bx,0,250*k,bx.naturalWidth,80*k,0,250,W,80+E);c.drawImage(bx,0,330*k,bx.naturalWidth,1020*k,0,330+E,W,1020);}}
- const dy=top?0:-E,rl=img(A.rsl);if(rl)contain(c,rl,L.lx,L.ly+dy,L.lw,L.lh);
- const tg=[[0,'#ffffff'],[0.55,'#ffffff'],[1,'#b9cdf5']];let y=L.t+dy;
- TL.forEach((ln,i)=>{c.direction=ar?'rtl':'ltr';const sz=fitSize(c,tf,ln,tsz,L.mw);gradText(c,ln,541,y,tf,sz,{align:'center',stops:tg});if(i<TL.length-1)y+=tp;});
- y+=L.gap;
- SL.forEach((ln,i)=>{c.save();c.translate(541,y);c.scale(1.12,1);c.direction=ar?'rtl':'ltr';txt(c,ln,0,0,FT.arMed,ssz,'#ffffff','center','alphabetic',L.mw/1.12);c.restore();y+=sp;});
- c.direction='ltr';
- if(top){const cs=cutSrc(),p=cs&&img(cs);if(p)cover(c,p,0,0,W,H,o.photoY,o.photoZ,o.photoX);} // the player in front of the box
+ const tp=tsz*1.14,sp=ssz*1.32,E=Math.max(0,TL.length-1)*tp+Math.max(0,SL.length-1)*sp; // extra height for lines beyond two
+ const tg=[[0,'#ffffff'],[0.55,'#ffffff'],[1,'#b9cdf5']];
+ const drawText=(y0)=>{let y=y0;TL.forEach((ln,i)=>{c.direction=ar?'rtl':'ltr';const sz=fitSize(c,tf,ln,tsz,L.mw);gradText(c,ln,540,y,tf,sz,{align:'center',stops:tg});if(i<TL.length-1)y+=tp;});
+  if(TL.length)y+=L.gap;SL.forEach((ln,i)=>{c.save();c.translate(540,y);c.scale(1.12,1);c.direction=ar?'rtl':'ltr';txt(c,ln,0,0,FT.arMed,ssz,'#ffffff','center','alphabetic',L.mw/1.12);c.restore();if(i<SL.length-1)y+=sp;});c.direction='ltr';return y;};
+ const bx=img(top?A.boxAchB:A.boxAchA),rl=img(A.rsl);
+ if(!top){ // box A: full width, grows upwards from the bottom
+  if(bx){const k=bx.naturalWidth/W;c.drawImage(bx,0,0,bx.naturalWidth,1100*k,0,-E,W,1100);c.drawImage(bx,0,1100*k,bx.naturalWidth,100*k,0,1100-E,W,100+E);c.drawImage(bx,0,1200*k,bx.naturalWidth,150*k,0,1200,W,150);}
+  if(rl)contain(c,rl,L.lx,L.ly-E,L.lw,L.lh);
+  const lastGap=(SL.length?0:0);drawText(L.t-E+(TL.length&&SL.length?93-L.gap:0)/1);
+ }else{ // box B: fits its text (width and height); size and position can be adjusted
+  c.direction='ltr';let tw=0;TL.forEach(ln=>{c.direction=ar?'rtl':'ltr';const sz=fitSize(c,tf,ln,tsz,L.mw);setF(c,tf,sz);tw=Math.max(tw,c.measureText(ln).width);});
+  SL.forEach(ln=>{c.direction=ar?'rtl':'ltr';const sz=fitSize(c,FT.arMed,ln,ssz,L.mw/1.12);setF(c,FT.arMed,sz);tw=Math.max(tw,c.measureText(ln).width*1.12);});c.direction='ltr';
+  const bw=Math.max(520,Math.min(1000,tw+190)),contentH=(TL.length?tp*(TL.length-1):0)+(TL.length&&SL.length?L.gap:0)+(SL.length?sp*(SL.length-1):0);
+  const bh=140+contentH+(SL.length?72:62),s=(o.achBoxS||100)/100,top0=84+(o.achBoxY||0);
+  c.save();c.translate(540,top0);c.scale(s,s);c.translate(-540,0); // local: box top at y=0
+  if(bx)nineSlice(c,bx,60,10,1020,470,150,540-bw/2-80,-74,540+bw/2+80,bh+75);
+  if(rl)contain(c,rl,539,2,116,103);
+  drawText(140);c.restore();
+  const cs=cutSrc(),p=cs&&img(cs);if(p)cover(c,p,0,0,W,H,o.photoY,o.photoZ,o.photoX); // the player in front of the box
+ }
 }
 // The cut-out only shows when it belongs to the current background photo
 function cutSrc(){if(PHOTO_MEM.achP===false)return null;if(PHOTO_MEM.achP)return PHOTO_MEM.achP;const l=lsGet('rsl-photo-achP');if(l)return l;if(PHOTO_MEM.achB||lsGet('rsl-photo-achB'))return null;return A.photo.achP;}
@@ -822,12 +834,12 @@ let BGRM=null;
 async function autoCutout(src){
  if(!BGRM)BGRM=import('https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.5.5/+esm');
  const m=await BGRM;const input=await (await fetch(new URL(src,location.href).href)).blob(); // give the tool the image itself, not a relative path
- const blob=await m.removeBackground(input,{output:{format:'image/png',quality:0.9},progress:(key,cur,tot)=>{if(/fetch/.test(key)&&tot)setCutStatus(`Loading the cut-out tool… ${Math.round(cur/tot*100)}%`);}});
+ const blob=await m.removeBackground(input,{model:'isnet_quint8',output:{format:'image/png',quality:0.9},progress:(key,cur,tot)=>{if(/fetch/.test(key)&&tot)setCutStatus(`Loading the cut-out tool… ${Math.round(cur/tot*100)}%`);else if(/compute/.test(key))setCutStatus('Cutting out the player…');}});
  return await new Promise(r=>{const fr=new FileReader();fr.onload=()=>r(fr.result);fr.readAsDataURL(blob);});}
-function setCutStatus(t){const el=$('#o-ach-status');if(el)el.textContent=t||'';}
+function setCutStatus(t){const el=$('#o-ach-status');if(el)el.textContent=t||'';if(t)toast(t);}
 async function runCutout(){const src=photoSrc('achB');PHOTO_MEM.achP=false;renderStudio();setCutStatus('Cutting out the player… (the first time takes a little longer)');$('#o-ach-auto').disabled=true;
  try{const d=await autoCutout(src);PHOTO_MEM.achP=d;lsSet('rsl-photo-achP',d);setCutStatus('Player cut out.');renderStudio();}
- catch(e){console.warn(e);setCutStatus('The automatic cut-out could not run here. Use the website, or upload a cut-out PNG.');}
+ catch(e){console.warn(e);setCutStatus(SITE?'The automatic cut-out failed for this photo ('+String(e&&e.message||e).slice(0,80)+'). Try again, or upload a cut-out PNG.':'The automatic cut-out only works on the website (rsl-gfx.github.io). Here, upload a cut-out PNG.');}
  finally{$('#o-ach-auto').disabled=false;}}
 /* ---- Player comparison (cmp psd, 2112 x 2640). Rows can be added/removed: the box grows upwards. Arabic is the mirror. ---- */
 function drawCmp(c,o){
@@ -898,13 +910,13 @@ function drawTo(canvas,o,scale){const T=TEMPLATES[o.tpl];const k=scale||(1080/T.
  const c=canvas.getContext('2d');c.setTransform(k,0,0,k,0,0);c.imageSmoothingQuality='high';T.draw(c,o);c.setTransform(1,0,0,1,0,0);}
 
 /* ============ studio UI ============ */
-const O={ach:{en:{t:'Best goals',s:'Sadio Mané'},ar:{t:'أجمل اهداف',s:'ساديو ماني'}},cmp:{p:[{team:'hil',en:'Neves',ar:'نيفيز'},{team:'sha',en:'Carrasco',ar:'كاراسكو'}],
+const O={achBoxS:100,achBoxY:0,ach:{en:{t:'Best goals',s:'Sadio Mané'},ar:{t:'أجمل اهداف',s:'ساديو ماني'}},cmp:{p:[{team:'hil',en:'Neves',ar:'نيفيز'},{team:'sha',en:'Carrasco',ar:'كاراسكو'}],
  rows:[{en:'Games',ar:'المباريات',l:'12',r:'9'},{en:'Goals',ar:'الأهداف',l:'2',r:'6'},{en:'Assists',ar:'صناعة الأهداف',l:'7',r:'4'}]},gsNames:{en:[],ar:[]},gsN:5,gsSplit:false,lang:'en',tpl:'mwfix',ftMatch:'',mw:'auto',day:'auto',title:'',dayLabel:'',src:'official',size:'1',photoY:30,photoZ:100,photoX:50};
 function resolvedMw(){if(O.mw!=='auto')return +O.mw;if(TEMPLATES[O.tpl].fix)return nextMw();if(TABLE_GROUP.includes(O.tpl)&&S.official&&S.official.mw)return S.official.mw;return lastPlayedMw();}
 function resolvedDay(mw){const days=mwDays(mw);if(O.day!=='auto'&&days.includes(O.day))return O.day;const ms=mwMatches(mw);
  if(TEMPLATES[O.tpl].fix){const u=ms.find(m=>!isPlayed(m));return u?u.date:days[0];}
  const p=ms.filter(isPlayed);return p.length?p[p.length-1].date:days[0];}
-function opts(){const mw=resolvedMw();return{...O,rawMw:O.mw,mw,day:resolvedDay(mw),photoY:O.photoY/100,photoZ:O.photoZ/100,photoX:O.photoX/100};}
+function opts(){const mw=resolvedMw();return{...O,achBoxS:O.achBoxS,achBoxY:O.achBoxY,rawMw:O.mw,mw,day:resolvedDay(mw),photoY:O.photoY/100,photoZ:O.photoZ/100,photoX:O.photoX/100};}
 let drawQueued=false;function scheduleDraw(){if(drawQueued)return;drawQueued=true;requestAnimationFrame(()=>{drawQueued=false;drawPreview();});}
 function drawPreview(){drawTo($('#cv'),opts());}
 function renderStudio(){
@@ -941,7 +953,8 @@ function renderFT(o){const on=O.tpl==='ft'||O.tpl==='thumb';$('#o-ft-wrap').styl
 function renderAch(){const on=O.tpl==='achA'||O.tpl==='achB';$('#o-ach-wrap').style.display=on?'':'none';if(!on)return;
  $('#o-daylbl-wrap').style.display='none';$('#o-title').closest('label').style.display='none';$('#o-mw').closest('label').style.display='none';
  const T=O.ach[O.lang==='ar'?'ar':'en'];['t','s'].forEach(k=>{const el=$('#o-ach-'+k);el.dir=O.lang==='ar'?'rtl':'ltr';if(document.activeElement!==el)el.value=T[k]||'';});
- $('#o-ach-cut').style.display=$('#o-ach-note').style.display=O.tpl==='achB'?'':'none';}
+ $('#o-ach-cut').style.display=$('#o-ach-note').style.display=$('#o-ach-box').style.display=O.tpl==='achB'?'':'none';$('#o-ach-bs').value=O.achBoxS;$('#o-ach-by').value=O.achBoxY;}
+$('#o-ach-bs').oninput=e=>{O.achBoxS=+e.target.value;scheduleDraw();};$('#o-ach-by').oninput=e=>{O.achBoxY=+e.target.value;scheduleDraw();};
 ['t','s'].forEach(k=>{$('#o-ach-'+k).oninput=e=>{O.ach[O.lang==='ar'?'ar':'en'][k]=e.target.value;scheduleDraw();};});
 $('#o-ach-auto').onclick=()=>runCutout();
 $('#o-ach-cut').addEventListener('change',async e=>{const f=e.target.files&&e.target.files[0];if(!f)return;const d=await resizeImage(f,2400,'image/png');PHOTO_MEM.achP=d;if(!lsSet('rsl-photo-achP',d))toast('This cut-out will be used now but is too large to keep after you reload.');e.target.value='';renderStudio();});
