@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>RSL GFX Studio</title>
 <meta name="rsl-site" content="1">
-<meta name="rsl-build" content="1794831806">
+<meta name="rsl-build" content="1794832141">
 <meta name="rsl-pass" content="5492dcdcf24546ce707e4c6e370ab4a0736d0defa0cbbf6f66798e57a309c6a1">
 <meta name="robots" content="noindex,nofollow">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -200,6 +200,7 @@ body.team #nav{display:none}
       <div id="o-gs-wrap">
         <div class="row"><label class="f"><span>Players</span><select id="o-gsn"><option value="5">Top 5</option><option value="4">Top 4</option><option value="3">Top 3</option><option value="2">Top 2</option></select></label>
         <label class="f"><span>Photos</span><select id="o-gssplit"><option value="0">One photo</option><option value="1">One per player</option></select></label></div>
+        <div id="o-gs-names"></div>
         <div class="btns" id="o-gs-uploads"></div>
       </div>
       <div id="o-photo-wrap">
@@ -744,25 +745,33 @@ function drawGS(c,o){
  const pn=img(A.panelGS);if(pn){c.save();if(ar){c.translate(W,0);c.scale(-1,1);}c.drawImage(pn,1736,0,1432,H);c.restore();}
  const rl=img(A.rsl);if(rl)contain(c,rl,X(2173),214,285,252);
  // title
- if(ar){c.direction='rtl';gradText(c,'ترتيب',X(2392),205,FT.arTitle,96,{align:'right',stops:GRAD});gradText(c,'الهدافين',X(2392),318,FT.arTitle,96,{align:'right',stops:GRAD});c.direction='ltr';}
- else{c.save();c.translate(2392,0);c.scale(1.066,1);gradText(c,'TOP GOAL',0,205,FT.title,96.4,{stops:GRAD});gradText(c,'SCORERS',0,300,FT.title,96.4,{stops:GRAD});c.restore();}
+ // title: split into two balanced lines; shrinks to fit when it's long
+ const tw=(o.title||(ar?'ترتيب الهدافين':'TOP GOAL SCORERS')).trim().split(/\s+/);let t1=tw.join(' '),t2='';if(tw.length>1){setF(c,ar?FT.arTitle:FT.title,96);let best=1e9; // split into two lines of similar width
+  for(let j=1;j<tw.length;j++){const a1=tw.slice(0,j).join(' '),a2=tw.slice(j).join(' ');const m=Math.max(c.measureText(ar?a1:a1.toUpperCase()).width,c.measureText(ar?a2:a2.toUpperCase()).width);if(m<best-1){best=m;t1=a1;t2=a2;}}}
+ const TMAX=W-70-2392;
+ if(ar){c.direction='rtl';const ts=Math.min(fitSize(c,FT.arTitle,t1,96,TMAX),t2?fitSize(c,FT.arTitle,t2,96,TMAX):96);
+  if(t2){gradText(c,t1,X(2392),205,FT.arTitle,ts,{align:'right',stops:GRAD});gradText(c,t2,X(2392),205+ts*1.18,FT.arTitle,ts,{align:'right',stops:GRAD});}
+  else gradText(c,t1,X(2392),262,FT.arTitle,ts,{align:'right',stops:GRAD});c.direction='ltr';}
+ else{const T1=t1.toUpperCase(),T2=t2.toUpperCase();c.save();c.translate(2392,0);c.scale(1.066,1);
+  const ts=Math.min(fitSize(c,FT.title,T1,96.4,TMAX/1.066),T2?fitSize(c,FT.title,T2,96.4,TMAX/1.066):96.4);
+  if(T2){gradText(c,T1,0,205,FT.title,ts,{stops:GRAD});gradText(c,T2,0,205+ts*0.985,FT.title,ts,{stops:GRAD});}else gradText(c,T1,0,255,FT.title,ts,{stops:GRAD});c.restore();}
  const L=scorersList().slice(0,N);
  const k=Math.min(1.3,pitch/686);
  for(let i=0;i<N;i++){
   if(i>0){c.fillStyle='rgba(130,160,220,0.30)';c.fillRect(ar?0:1971,rowTop(i)-2,W-1971,4);}
   const g=L[i];if(!g)continue;const t=team(g.team);
-  const top=rowTop(i)+(Math.min(pitch,rowBot(i)-rowTop(i))-686*k)/2;
-  c.save();c.translate(X(1971),top);c.scale(ar?-k:k,k); // local box: x from the panel edge, mirrored for Arabic
+  const top=rowTop(i),bot=Math.min(rowBot(i),H-20);const nm=((o.gsNames||{})[o.lang]||[])[i]||(ar?(g.ar||g.en):g.en)||'';
+  c.save();c.translate(X(1971),top);c.scale(ar?-k:k,k); // club tile at the top of the row, flush with the panel edge
   rr(c,0,10,234,178,[0,30,30,0]);c.fillStyle=(t&&t.color)||'#444';c.fill();
   c.save();if(ar){c.scale(-1,1);}const cs=isTile(t,'logo')?130/TILE:130;contain(c,img(logoColor(t)),ar?-117:117,99,cs,cs);c.restore();
   c.restore();
-  // text is drawn unmirrored
   const nx=X(1971+287*k),maxW=(W-60)-(1971+287*k);
-  if(ar){c.direction='rtl';txt(c,g.ar||g.en||'',nx,top+131*k,FT.boldAr,98*k,'#ffffff','right','alphabetic',maxW);c.direction='ltr';}
-  else{c.save();try{c.letterSpacing=(-0.025*106.6*k).toFixed(1)+'px';}catch(e){}txt(c,(g.en||'').toUpperCase(),nx,top+131*k,FT.bold,106.6*k,'#ffffff','left','alphabetic',maxW);c.restore();}
-  const cx=X(2608),by=top+581*k; // number stays centred in the panel whatever the row size
-  c.save();c.translate(cx,by);c.scale(1.066,1);const gr=c.createLinearGradient(-200*k,0,200*k,-420*k);gr.addColorStop(0,'#ffffff');gr.addColorStop(0.45,'#f6f8fd');gr.addColorStop(1,'#d6e4ff');
-  txt(c,String(g.goals??''),0,0,FT.score,547*k,gr,'center','alphabetic',2*(W-60-2608)/1.066);c.restore();
+  if(ar){c.direction='rtl';txt(c,nm,nx,top+131*k,FT.boldAr,98*k,'#ffffff','right','alphabetic',maxW);c.direction='ltr';}
+  else{c.save();try{c.letterSpacing=(-0.025*106.6*k).toFixed(1)+'px';}catch(e){}txt(c,nm.toUpperCase(),nx,top+131*k,FT.bold,106.6*k,'#ffffff','left','alphabetic',maxW);c.restore();}
+  const NS=492*k,capH=NS*0.72,a0=top+(188+40)*k,a1=bot-40; // number centred in the space under the name
+  const cx=X(2608),by=Math.max(a0+capH,(a0+a1)/2+capH/2);
+  c.save();c.translate(cx,by);c.scale(1.066,1);const gr=c.createLinearGradient(-200*k,0,200*k,-380*k);gr.addColorStop(0,'#ffffff');gr.addColorStop(0.45,'#f6f8fd');gr.addColorStop(1,'#d6e4ff');
+  txt(c,String(g.goals??''),0,0,FT.score,NS,gr,'center','alphabetic',2*(W-60-2608)/1.066);c.restore();
  }
 }
 /* ---- Highlights thumbnail (thumbnail psd, 3840 x 2160, English only) ---- */
@@ -798,7 +807,7 @@ function drawTo(canvas,o,scale){const T=TEMPLATES[o.tpl];const k=scale||(1080/T.
  const c=canvas.getContext('2d');c.setTransform(k,0,0,k,0,0);c.imageSmoothingQuality='high';T.draw(c,o);c.setTransform(1,0,0,1,0,0);}
 
 /* ============ studio UI ============ */
-const O={gsN:5,gsSplit:false,lang:'en',tpl:'mwfix',ftMatch:'',mw:'auto',day:'auto',title:'',dayLabel:'',src:'official',size:'1',photoY:30,photoZ:100,photoX:50};
+const O={gsNames:{en:[],ar:[]},gsN:5,gsSplit:false,lang:'en',tpl:'mwfix',ftMatch:'',mw:'auto',day:'auto',title:'',dayLabel:'',src:'official',size:'1',photoY:30,photoZ:100,photoX:50};
 function resolvedMw(){if(O.mw!=='auto')return +O.mw;if(TEMPLATES[O.tpl].fix)return nextMw();if(TABLE_GROUP.includes(O.tpl)&&S.official&&S.official.mw)return S.official.mw;return lastPlayedMw();}
 function resolvedDay(mw){const days=mwDays(mw);if(O.day!=='auto'&&days.includes(O.day))return O.day;const ms=mwMatches(mw);
  if(TEMPLATES[O.tpl].fix){const u=ms.find(m=>!isPlayed(m));return u?u.date:days[0];}
@@ -837,10 +846,15 @@ function renderFT(o){const on=O.tpl==='ft'||O.tpl==='thumb';$('#o-ft-wrap').styl
   $('#o-hsc').placeholder=F?(cur.homeScorers||'رونالدو 64'):'Ronaldo 64';$('#o-asc').placeholder=F?(cur.awayScorers||'رونالدو 64'):'Ronaldo 64';
   if(document.activeElement!==$('#o-hsc'))$('#o-hsc').value=cur['homeScorers'+F]||'';if(document.activeElement!==$('#o-asc'))$('#o-asc').value=cur['awayScorers'+F]||'';}}
 function renderGS(){const on=O.tpl==='gs';$('#o-gs-wrap').style.display=on?'':'none';if(!on)return;
- $('#o-daylbl-wrap').style.display='none';$('#o-title').closest('label').style.display='none';
+ $('#o-daylbl-wrap').style.display='none';$('#o-title').closest('label').style.display='';$('#o-title').placeholder=O.lang==='ar'?'ترتيب الهدافين':'TOP GOAL SCORERS';
+ renderGSNames();
  $('#o-gsn').value=String(O.gsN);$('#o-gssplit').value=O.gsSplit?'1':'0';
  $('#o-photo').closest('.btns').style.display=O.gsSplit?'none':'';
  const L=scorersList();$('#o-gs-uploads').innerHTML=O.gsSplit?Array.from({length:O.gsN},(_,i)=>`<label class="btn sm">Photo ${i+1}${L[i]?' · '+esc(L[i].en):''}<input type="file" accept="image/*" data-slot="gs${i+1}" hidden></label>`).join(''):'';}
+function renderGSNames(){const L=scorersList(),ar=O.lang==='ar',cur=(O.gsNames[O.lang]||[]);
+ if($('#o-gs-names').contains(document.activeElement))return;
+ $('#o-gs-names').innerHTML=Array.from({length:O.gsN},(_,i)=>{const d=L[i]?(ar?(L[i].ar||L[i].en):L[i].en):'';return `<label class="f"><span>Player ${i+1} name${L[i]?' · '+L[i].goals+' goals':''}</span><input type="text" data-gsi="${i}" ${ar?'dir="rtl"':''} value="${esc(cur[i]||'')}" placeholder="${esc(d)}"></label>`}).join('');}
+$('#o-gs-names').addEventListener('input',e=>{const i=+e.target.dataset.gsi;if(isNaN(i))return;(O.gsNames[O.lang]=O.gsNames[O.lang]||[])[i]=e.target.value;scheduleDraw();});
 $('#o-gsn').onchange=e=>{O.gsN=+e.target.value;renderStudio();};
 $('#o-gssplit').onchange=e=>{O.gsSplit=e.target.value==='1';renderStudio();};
 $('#o-gs-uploads').addEventListener('change',async e=>{const f=e.target.files&&e.target.files[0],k=e.target.dataset.slot;if(!f||!k)return;const d=await resizeImage(f,3400,'image/jpeg',0.86);PHOTO_MEM[k]=d;if(!lsSet('rsl-photo-'+k,d))toast('This photo will be used now but is too large to keep after you reload.');e.target.value='';renderStudio();});
