@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>RSL GFX Studio</title>
 <meta name="rsl-site" content="1">
-<meta name="rsl-build" content="1794833036">
+<meta name="rsl-build" content="1794833703">
 <meta name="rsl-pass" content="5492dcdcf24546ce707e4c6e370ab4a0736d0defa0cbbf6f66798e57a309c6a1">
 <meta name="robots" content="noindex,nofollow">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -197,6 +197,12 @@ body.team #nav{display:none}
       <label class="f" id="o-src-wrap"><span>Table source</span><select id="o-src"><option value="official">Official SAFF table (synced)</option><option value="calc">Calculated from results here</option></select></label>
       <label class="f"><span id="o-title-lbl">Title (leave empty for automatic)</span><input type="text" id="o-title" placeholder="Automatic"></label>
       <label class="f" id="o-daylbl-wrap"><span>Day label (leave empty for automatic)</span><input type="text" id="o-daylbl" placeholder="Automatic"></label>
+      <div id="o-ach-wrap">
+        <label class="f"><span>Title</span><input type="text" id="o-ach-t"></label>
+        <label class="f"><span>Second line</span><input type="text" id="o-ach-s"></label>
+        <div class="btns" id="o-ach-cut"><label class="btn sm">Upload player cut-out (PNG)<input type="file" accept="image/png,image/webp" data-slot="achP" hidden></label></div>
+        <p class="note" id="o-ach-note">For "player in front", upload the background photo and a cut-out of the player with a transparent background, both from the same image.</p>
+      </div>
       <div id="o-cmp-wrap">
         <div id="o-cmp-players"></div>
         <label class="f"><span>Stats</span></label><div id="o-cmp-rows"></div>
@@ -441,8 +447,8 @@ async function resizeImage(file,max,type,q){const src=await readFile(file);const
  c.getContext('2d').drawImage(im,0,0,c.width,c.height);return c.toDataURL(type||'image/png',q||0.9);}
 const A={tableBg:'assets/table_bg.jpg',rsl:'assets/rsl_logo.png',panel:'assets/panel_day.jpg',panelMW:'assets/panel_mw.jpg',
  ftBox:'assets/ft_box.png',ftBoxTall:'assets/ft_box_tall.png',
- panelT4:'assets/panel_top4.jpg',panelCmp:'assets/panel_cmp.jpg',panelGS:'assets/panel_gs.webp',panelThumb:'assets/panel_thumb.jpg',
- photo:{cmp1:'assets/photo_cmp1.jpg',cmp2:'assets/photo_cmp2.jpg',gs:'assets/photo_gs.jpg',gs1:'assets/photo_gs.jpg',gs2:'assets/photo_gs.jpg',gs3:'assets/photo_gs.jpg',gs4:'assets/photo_gs.jpg',gs5:'assets/photo_gs.jpg',top4:'assets/photo_top4.jpg',bot4:'assets/photo_top4.jpg',thumb:'assets/photo_thumb.jpg',ft:'assets/photo_ft.jpg',dayfix:'assets/photo_fixtures.jpg',dayres:'assets/photo_results.jpg',mwfix:'assets/photo_mw_fixtures.jpg',mwres:'assets/photo_mw_results.jpg'}};
+ panelT4:'assets/panel_top4.jpg',boxAchA:'assets/box_achA.webp',boxAchB:'assets/box_achB.webp',panelCmp:'assets/panel_cmp.jpg',panelGS:'assets/panel_gs.webp',panelThumb:'assets/panel_thumb.jpg',
+ photo:{achA:'assets/photo_achA.jpg',achB:'assets/photo_achB.jpg',achP:'assets/photo_achP.webp',cmp1:'assets/photo_cmp1.jpg',cmp2:'assets/photo_cmp2.jpg',gs:'assets/photo_gs.jpg',gs1:'assets/photo_gs.jpg',gs2:'assets/photo_gs.jpg',gs3:'assets/photo_gs.jpg',gs4:'assets/photo_gs.jpg',gs5:'assets/photo_gs.jpg',top4:'assets/photo_top4.jpg',bot4:'assets/photo_top4.jpg',thumb:'assets/photo_thumb.jpg',ft:'assets/photo_ft.jpg',dayfix:'assets/photo_fixtures.jpg',dayres:'assets/photo_results.jpg',mwfix:'assets/photo_mw_fixtures.jpg',mwres:'assets/photo_mw_results.jpg'}};
 const ASSET_V='11'; // bump when crest files change so browsers don't keep old copies
 const logoColor=t=>t?(t.logo||(KNOWN.has(t.id)?`assets/logos/${t.id}_c.png?v=${ASSET_V}`:null)):null;
 // Built-in crests are full tiles from the club-logos file (crest ≈74% of the tile, as the designer sized them).
@@ -781,6 +787,21 @@ function drawGS(c,o){
   txt(c,String(g.goals??''),0,0,FT.score,NS,gr,'center','alphabetic',2*(W-60-2608)/1.066);c.restore();
  }
 }
+/* ---- Achievement (Q psd, 1080 x 1350): box at the bottom, or box at the top with the player cut-out in front ---- */
+function drawAch(c,o,top){
+ const W=1080,H=1350,ar=o.lang==='ar',T=O.ach[ar?'ar':'en']||{};c.direction='ltr';
+ c.fillStyle='#05080e';c.fillRect(0,0,W,H);
+ cover(c,img(photoSrc(top?'achB':'achA')),0,0,W,H,o.photoY,o.photoZ,o.photoX);
+ const bx=img(top?A.boxAchB:A.boxAchA);if(bx)c.drawImage(bx,0,0,W,H);
+ const L=top?{lx:539,ly:86,lw:116,lh:103,t:224,ts:71.4,s:314,ss:53.5,mw:740}:{lx:540.5,ly:1021,lw:137,lh:122,t:1168.6,ts:83.3,s:1261.6,ss:62.5,mw:900};
+ const rl=img(A.rsl);if(rl)contain(c,rl,L.lx,L.ly,L.lw,L.lh);
+ const tg=[[0,'#ffffff'],[0.55,'#ffffff'],[1,'#b9cdf5']];
+ const title=ar?(T.t||''):(T.t||'').toUpperCase(),sub=ar?(T.s||''):(T.s||'').toUpperCase();
+ if(ar){c.direction='rtl';const ts=fitSize(c,FT.arTitle,title,L.ts,L.mw);gradText(c,title,541,L.t,FT.arTitle,ts,{align:'center',stops:tg});}
+ else{const ts=fitSize(c,FT.title,title,L.ts*0.92,L.mw);gradText(c,title,541,L.t,FT.title,ts,{align:'center',stops:tg});}
+ c.save();c.translate(541,L.s);c.scale(1.12,1);c.direction=ar?'rtl':'ltr';txt(c,sub,0,0,FT.arMed,ar?L.ss:L.ss*0.85,'#ffffff','center','alphabetic',L.mw/1.12);c.restore();c.direction='ltr';
+ if(top){const p=img(photoSrc('achP'));if(p)cover(c,p,0,0,W,H,o.photoY,o.photoZ,o.photoX);} // the player in front of the box
+}
 /* ---- Player comparison (cmp psd, 2112 x 2640). Rows can be added/removed: the box grows upwards. Arabic is the mirror. ---- */
 function drawCmp(c,o){
  const W=2112,H=2640,ar=o.lang==='ar',X=v=>ar?W-v:v,C=O.cmp,N=Math.max(1,C.rows.length),PITCH=158.2,sh=(N-3)*PITCH;c.direction='ltr';
@@ -830,6 +851,8 @@ const TEMPLATES={
  dayfix:{hidden:true,name:'Day fixtures',desc:'One match day',W:CD.W,H:CD.H,draw:(c,o)=>drawDay(c,o,'fixtures'),fix:true,day:true},
  dayres:{hidden:true,name:'Day results',desc:'One match day',W:CD.W,H:CD.H,draw:(c,o)=>drawDay(c,o,'results'),day:true},
  ft:{name:'Full time',desc:'Post or thumbnail',W:2160,H:2700,draw:drawFT},
+ achA:{name:'Achievement',desc:'Standout moments',W:1080,H:1350,draw:(c,o)=>drawAch(c,o,false)},
+ achB:{hidden:true,name:'Achievement',desc:'Player in front',W:1080,H:1350,draw:(c,o)=>drawAch(c,o,true)},
  cmp:{name:'Comparison',desc:'Two players',W:2112,H:2640,draw:drawCmp},
  gs:{name:'Top scorers',desc:'Goalscorers',W:3168,H:3960,draw:drawGS},
  thumb:{hidden:true,name:'Thumbnail',desc:'Highlights',W:3840,H:2160,draw:drawThumb,enOnly:true},
@@ -841,13 +864,14 @@ const TABLE_GROUP=['table','top4','bot4'];
 const GROUPS=[{tile:'table',label:'Table size',items:[['table','Full table (18 clubs)'],['top4','Top 4'],['bot4','Bottom 4']]},
  {tile:'mwfix',label:'Layout',items:[['mwfix','Whole matchweek'],['dayfix','One match day']]},
  {tile:'mwres',label:'Layout',items:[['mwres','Whole matchweek'],['dayres','One match day']]},
+ {tile:'achA',label:'Layout',items:[['achA','Box at the bottom'],['achB','Box at the top · player in front']]},
  {tile:'ft',label:'Format',items:[['ft','Full time post'],['thumb','Highlights thumbnail']]}];
 const groupOf=k=>GROUPS.find(g=>g.items.some(i=>i[0]===k));
 function drawTo(canvas,o,scale){const T=TEMPLATES[o.tpl];const k=scale||(1080/T.W);canvas.width=Math.round(T.W*k);canvas.height=Math.round(T.H*k);
  const c=canvas.getContext('2d');c.setTransform(k,0,0,k,0,0);c.imageSmoothingQuality='high';T.draw(c,o);c.setTransform(1,0,0,1,0,0);}
 
 /* ============ studio UI ============ */
-const O={cmp:{p:[{team:'hil',en:'Neves',ar:'نيفيز'},{team:'sha',en:'Carrasco',ar:'كاراسكو'}],
+const O={ach:{en:{t:'Best goals',s:'Sadio Mané'},ar:{t:'أجمل اهداف',s:'ساديو ماني'}},cmp:{p:[{team:'hil',en:'Neves',ar:'نيفيز'},{team:'sha',en:'Carrasco',ar:'كاراسكو'}],
  rows:[{en:'Games',ar:'المباريات',l:'12',r:'9'},{en:'Goals',ar:'الأهداف',l:'2',r:'6'},{en:'Assists',ar:'صناعة الأهداف',l:'7',r:'4'}]},gsNames:{en:[],ar:[]},gsN:5,gsSplit:false,lang:'en',tpl:'mwfix',ftMatch:'',mw:'auto',day:'auto',title:'',dayLabel:'',src:'official',size:'1',photoY:30,photoZ:100,photoX:50};
 function resolvedMw(){if(O.mw!=='auto')return +O.mw;if(TEMPLATES[O.tpl].fix)return nextMw();if(TABLE_GROUP.includes(O.tpl)&&S.official&&S.official.mw)return S.official.mw;return lastPlayedMw();}
 function resolvedDay(mw){const days=mwDays(mw);if(O.day!=='auto'&&days.includes(O.day))return O.day;const ms=mwMatches(mw);
@@ -863,7 +887,7 @@ function renderStudio(){
  const days=mwDays(mw);const rd=resolvedDay(mw);
  $('#o-day').innerHTML=`<option value="auto">Automatic (${esc(weekday(rd))} ${esc(rd||'')})</option>`+days.map(d=>{const n=mwMatches(mw).filter(m=>m.date===d).length;return `<option value="${d}" ${d===O.day?'selected':''}>${weekday(d)} ${d} · ${n} match${n>1?'es':''}</option>`}).join('');
  const isDay=!!TEMPLATES[O.tpl].day;$('#o-day-wrap').style.display=isDay?'':'none';$('#o-daylbl-wrap').style.display=(isTG||isThumb)?'none':'';$('#o-daylbl-wrap').querySelector('span').textContent=isDay?'Day label (leave empty for automatic)':'Right-hand label (leave empty for automatic)';$('#o-photo-wrap').style.display=isT?'none':'';
- $('#o-lang').value=O.lang;renderGS();renderCmp();$('#o-lang-wrap').style.display=isThumb?'none':'';{const G=groupOf(O.tpl);$('#o-tsize-wrap').style.display=G?'':'none';if(G){$('#o-tsize-l').textContent=G.label;$('#o-tsize').innerHTML=G.items.map(([k,l])=>`<option value="${k}" ${k===O.tpl?'selected':''}>${esc(l)}</option>`).join('');}}$('#o-src-wrap').style.display=isTG?'':'none';$('#o-src').value=O.src;$('#o-photo-y').value=O.photoY;$('#o-photo-z').value=O.photoZ;$('#o-photo-x').value=O.photoX;syncPhotoX();
+ $('#o-lang').value=O.lang;renderGS();renderCmp();renderAch();$('#o-lang-wrap').style.display=isThumb?'none':'';{const G=groupOf(O.tpl);$('#o-tsize-wrap').style.display=G?'':'none';if(G){$('#o-tsize-l').textContent=G.label;$('#o-tsize').innerHTML=G.items.map(([k,l])=>`<option value="${k}" ${k===O.tpl?'selected':''}>${esc(l)}</option>`).join('');}}$('#o-src-wrap').style.display=isTG?'':'none';$('#o-src').value=O.src;$('#o-photo-y').value=O.photoY;$('#o-photo-z').value=O.photoZ;$('#o-photo-x').value=O.photoX;syncPhotoX();
  $('#b-zip').style.display=isDay?'':'none';
  const AR=O.lang==='ar';
  $('#o-title').placeholder=isThumb?'HIGHLIGHTS':isTG?(AR?`الجولة ${tableRows(opts()).mw}`:`MW ${tableRows(opts()).mw}`):O.tpl==='dayfix'?(AR?`الجولة ${mw}`:`MW ${mw}`):O.tpl==='mwfix'?(AR?'المباريات':'FIXTURES'):(AR?'النتائج':'RESULTS');$('#o-daylbl').placeholder=isDay?(AR?weekdayAr(rd):weekday(rd)):(AR?`الجولة ${mw}`:`MW ${mw}`);
@@ -887,7 +911,13 @@ function renderFT(o){const on=O.tpl==='ft'||O.tpl==='thumb';$('#o-ft-wrap').styl
   $('#o-hsc').dir=$('#o-asc').dir=F?'rtl':'ltr';
   $('#o-hsc').placeholder=F?(cur.homeScorers||'رونالدو 64'):'Ronaldo 64';$('#o-asc').placeholder=F?(cur.awayScorers||'رونالدو 64'):'Ronaldo 64';
   if(document.activeElement!==$('#o-hsc'))$('#o-hsc').value=cur['homeScorers'+F]||'';if(document.activeElement!==$('#o-asc'))$('#o-asc').value=cur['awayScorers'+F]||'';}}
-function renderCmp(){const on=O.tpl==='cmp';$('#o-cmp-wrap').style.display=on?'':'none';$('#o-mw').closest('label').style.display=on?'none':'';if(!on)return;
+function renderAch(){const on=O.tpl==='achA'||O.tpl==='achB';$('#o-ach-wrap').style.display=on?'':'none';if(!on)return;
+ $('#o-daylbl-wrap').style.display='none';$('#o-title').closest('label').style.display='none';$('#o-mw').closest('label').style.display='none';
+ const T=O.ach[O.lang==='ar'?'ar':'en'];['t','s'].forEach(k=>{const el=$('#o-ach-'+k);el.dir=O.lang==='ar'?'rtl':'ltr';if(document.activeElement!==el)el.value=T[k]||'';});
+ $('#o-ach-cut').style.display=$('#o-ach-note').style.display=O.tpl==='achB'?'':'none';}
+['t','s'].forEach(k=>{$('#o-ach-'+k).oninput=e=>{O.ach[O.lang==='ar'?'ar':'en'][k]=e.target.value;scheduleDraw();};});
+$('#o-ach-cut').addEventListener('change',async e=>{const f=e.target.files&&e.target.files[0];if(!f)return;const d=await resizeImage(f,2400,'image/png');PHOTO_MEM.achP=d;if(!lsSet('rsl-photo-achP',d))toast('This cut-out will be used now but is too large to keep after you reload.');e.target.value='';renderStudio();});
+function renderCmp(){const on=O.tpl==='cmp';$('#o-cmp-wrap').style.display=on?'':'none';$('#o-mw').closest('label').style.display=(on||O.tpl==='achA'||O.tpl==='achB')?'none':'';if(!on)return;
  $('#o-daylbl-wrap').style.display='none';$('#o-title').closest('label').style.display='none';$('#o-photo').closest('.btns').style.display='none';
  const ae=document.activeElement;if(ae&&ae.tagName==='INPUT'&&ae.type==='text'&&$('#o-cmp-wrap').contains(ae))return;const L=O.lang,C=O.cmp; // don't rebuild while typing
  $('#o-cmp-players').innerHTML=C.p.map((p,j)=>`<div class="row"><label class="f" style="flex:0 0 42%"><span>Player ${j+1} club</span><select data-cp="${j}" data-f="team">${S.teams.map(t=>`<option value="${t.id}" ${t.id===p.team?'selected':''}>${esc(t.en)}</option>`).join('')}</select></label><label class="f"><span>Name${L==='ar'?' (Arabic)':''}</span><input type="text" data-cp="${j}" data-f="${L}" ${L==='ar'?'dir="rtl"':''} value="${esc(p[L]||'')}"></label></div>`).join('');
@@ -939,10 +969,11 @@ async function saveBlob(name,blob){
  if(SITE){const u=URL.createObjectURL(blob);const a=document.createElement('a');a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000);toast('Downloaded '+name);return;}
  const url=URL.createObjectURL(blob);const isImg=blob.type.startsWith('image/');
  openDlg(`<h2>${esc(name)}</h2><p class="note" style="margin-top:0">${isImg?'Right-click the image (or long-press on a phone) and choose Save.':'Click the link to download.'}</p>${isImg?`<img src="${url}" alt="">`:`<p><a class="btn pri" href="${url}" download="${esc(name)}">Download ${esc(name)}</a></p>`}<div class="btns"><button class="btn" data-close>Close</button></div>`);}
-function collectImgs(o){const l=[A.tableBg,A.rsl,A.panel,A.panelMW,A.ftBox,A.ftBoxTall,A.panelT4,A.panelCmp,A.panelThumb,A.panelGS,...Object.keys(A.photo).map(photoSrc)];S.teams.forEach(t=>{l.push(logoColor(t),logoMono(t));});return l.filter(Boolean);}
+function collectImgs(o){const l=[A.tableBg,A.rsl,A.panel,A.panelMW,A.ftBox,A.ftBoxTall,A.panelT4,A.panelCmp,A.boxAchA,A.boxAchB,A.panelThumb,A.panelGS,...Object.keys(A.photo).map(photoSrc)];S.teams.forEach(t=>{l.push(logoColor(t),logoMono(t));});return l.filter(Boolean);}
 function exportScale(o){return 2160/TEMPLATES[o.tpl].W;} // every export is 2160 px wide (2x of 1080)
 function fileName(o){return fileName0(o)+(o.lang==='ar'?'_AR':'');}
-function fileName0(o){if(o.tpl==='cmp')return `RSL_Comparison_${(O.cmp.p[0].en||'P1').replace(/\W+/g,'')}_${(O.cmp.p[1].en||'P2').replace(/\W+/g,'')}`;
+function fileName0(o){if(o.tpl==='achA'||o.tpl==='achB')return `RSL_Achievement_${(O.ach.en.s||O.ach.en.t||'').replace(/\W+/g,'')}`;
+ if(o.tpl==='cmp')return `RSL_Comparison_${(O.cmp.p[0].en||'P1').replace(/\W+/g,'')}_${(O.cmp.p[1].en||'P2').replace(/\W+/g,'')}`;
  if(o.tpl==='gs')return `RSL_TopScorers_Top${o.gsN}`;
  if(o.tpl==='thumb'){const m=ftMatch(o);return `RSL_Thumbnail_MW${pad2(o.mw)}_${m?(team(m.home)?.short+'-'+team(m.away)?.short):''}`;}
  if(o.tpl==='top4'||o.tpl==='bot4')return `RSL_Table_${o.tpl==='top4'?'Top4':'Bottom4'}_MW${pad2(tableRows(o).mw)}`;
