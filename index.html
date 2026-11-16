@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>RSL GFX Studio</title>
 <meta name="rsl-site" content="1">
-<meta name="rsl-build" content="1794837060">
+<meta name="rsl-build" content="1794837230">
 <meta name="rsl-pass" content="5492dcdcf24546ce707e4c6e370ab4a0736d0defa0cbbf6f66798e57a309c6a1">
 <meta name="robots" content="noindex,nofollow">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -219,7 +219,7 @@ body.team #nav{display:none}
         <div class="btns" id="o-gs-uploads"></div>
       </div>
       <div id="o-photo-wrap">
-        <label class="f"><span>Photo (top of the graphic). It's kept in this browser.</span></label>
+        <label class="f"><span>Photo. Uploads reset to the default photo when you refresh.</span></label>
         <div class="btns" style="margin-top:4px"><label class="btn sm">Upload photo<input type="file" id="o-photo" accept="image/*" hidden></label></div>
         <label class="f"><span>Photo position (up / down)</span><input type="range" id="o-photo-y" min="0" max="100" value="30" style="width:100%"></label>
         <label class="f"><span>Photo size</span><input type="range" id="o-photo-z" min="100" max="250" value="100" style="width:100%"></label>
@@ -458,7 +458,9 @@ const logoColor=t=>t?(t.logo||(KNOWN.has(t.id)?`assets/logos/${t.id}_c.png?v=${A
 const TILE=0.745;const isTile=(t,f)=>t&&!t[f]&&KNOWN.has(t.id);
 const logoMono=t=>t?(t.mono||(KNOWN.has(t.id)?`assets/logos/${t.id}_w.png?v=${ASSET_V}`:null)||t.logo):null;
 const PHOTO_MEM={};
-const photoSrc=k=>PHOTO_MEM[k]||lsGet('rsl-photo-'+k)||A.photo[k];
+// Uploaded photos last until the page is refreshed; then every template goes back to its default photo.
+try{Object.keys(localStorage).filter(k=>k.startsWith('rsl-photo-')).forEach(k=>localStorage.removeItem(k));}catch(e){}
+const photoSrc=k=>PHOTO_MEM[k]||A.photo[k];
 
 // Fonts. Bundled: the Lama Sans faces recovered from your PSD / brand guidelines, and Expanded Numbers.
 // Upload slots cover the faces we don't have complete files for; an uploaded file always takes priority.
@@ -831,7 +833,7 @@ function drawAch(c,o,top){
  }
 }
 // The cut-out only shows when it belongs to the current background photo
-function cutSrc(){if(PHOTO_MEM.achP===false)return null;if(PHOTO_MEM.achP)return PHOTO_MEM.achP;const l=lsGet('rsl-photo-achP');if(l)return l;if(PHOTO_MEM.achB||lsGet('rsl-photo-achB'))return null;return A.photo.achP;}
+function cutSrc(){if(PHOTO_MEM.achP===false)return null;if(PHOTO_MEM.achP)return PHOTO_MEM.achP;if(PHOTO_MEM.achB)return null;return A.photo.achP;}
 // Automatic player cut-out (background removal runs in the browser; the model loads from the web the first time)
 let BGRM=null;
 async function autoCutout(src){
@@ -841,7 +843,7 @@ async function autoCutout(src){
  return await new Promise(r=>{const fr=new FileReader();fr.onload=()=>r(fr.result);fr.readAsDataURL(blob);});}
 function setCutStatus(t){const el=$('#o-ach-status');if(el)el.textContent=t||'';if(t)toast(t);}
 async function runCutout(){const src=photoSrc('achB');PHOTO_MEM.achP=false;renderStudio();setCutStatus('Cutting out the player… (the first time takes a little longer)');$('#o-ach-auto').disabled=true;
- try{const d=await autoCutout(src);PHOTO_MEM.achP=d;lsSet('rsl-photo-achP',d);setCutStatus('Player cut out.');renderStudio();}
+ try{const d=await autoCutout(src);PHOTO_MEM.achP=d;setCutStatus('Player cut out.');renderStudio();}
  catch(e){console.warn(e);setCutStatus(SITE?'The automatic cut-out failed for this photo ('+String(e&&e.message||e).slice(0,80)+'). Try again, or upload a cut-out PNG.':'The automatic cut-out only works on the website (rsl-gfx.github.io). Here, upload a cut-out PNG.');}
  finally{$('#o-ach-auto').disabled=false;}}
 /* ---- Player comparison (cmp psd, 2112 x 2640). Rows can be added/removed: the box grows upwards. Arabic is the mirror. ---- */
@@ -960,7 +962,7 @@ function renderAch(){const on=O.tpl==='achA'||O.tpl==='achB';$('#o-ach-wrap').st
 $('#o-ach-bs').oninput=e=>{O.achBoxS=+e.target.value;scheduleDraw();};$('#o-ach-by').oninput=e=>{O.achBoxY=+e.target.value;scheduleDraw();};
 ['t','s'].forEach(k=>{$('#o-ach-'+k).oninput=e=>{O.ach[O.lang==='ar'?'ar':'en'][k]=e.target.value;scheduleDraw();};});
 $('#o-ach-auto').onclick=()=>runCutout();
-$('#o-ach-cut').addEventListener('change',async e=>{const f=e.target.files&&e.target.files[0];if(!f)return;const d=await resizeImage(f,2400,'image/png');PHOTO_MEM.achP=d;if(!lsSet('rsl-photo-achP',d))toast('This cut-out will be used now but is too large to keep after you reload.');e.target.value='';renderStudio();});
+$('#o-ach-cut').addEventListener('change',async e=>{const f=e.target.files&&e.target.files[0];if(!f)return;const d=await resizeImage(f,2400,'image/png');PHOTO_MEM.achP=d;e.target.value='';renderStudio();});
 function renderCmp(){const on=O.tpl==='cmp';$('#o-cmp-wrap').style.display=on?'':'none';$('#o-mw').closest('label').style.display=(on||O.tpl==='achA'||O.tpl==='achB')?'none':'';if(!on)return;
  $('#o-daylbl-wrap').style.display='none';$('#o-title').closest('label').style.display='none';$('#o-photo').closest('.btns').style.display='none';
  const ae=document.activeElement;if(ae&&ae.tagName==='INPUT'&&ae.type==='text'&&$('#o-cmp-wrap').contains(ae))return;const L=O.lang,C=O.cmp; // don't rebuild while typing
@@ -968,7 +970,7 @@ function renderCmp(){const on=O.tpl==='cmp';$('#o-cmp-wrap').style.display=on?''
  $('#o-cmp-rows').innerHTML=C.rows.map((r,i)=>`<div class="row" style="margin-top:6px"><input type="text" data-cr="${i}" data-f="l" value="${esc(r.l)}" style="flex:0 0 18%;text-align:center"><input type="text" data-cr="${i}" data-f="${L}" ${L==='ar'?'dir="rtl"':''} value="${esc(r[L]||'')}" placeholder="${L==='ar'?'الإحصائية':'Stat'}"><input type="text" data-cr="${i}" data-f="r" value="${esc(r.r)}" style="flex:0 0 18%;text-align:center"><button class="btn sm danger" data-del="${i}" type="button" style="flex:0 0 auto" title="Remove row">×</button></div>`).join('');}
 $('#o-cmp-wrap').addEventListener('input',e=>{const d=e.target.dataset;if(d.cp!=null)O.cmp.p[+d.cp][d.f]=e.target.value;else if(d.cr!=null)O.cmp.rows[+d.cr][d.f]=e.target.value;else return;scheduleDraw();});
 $('#o-cmp-wrap').addEventListener('change',e=>{const d=e.target.dataset;if(d.cp!=null&&d.f==='team'){O.cmp.p[+d.cp].team=e.target.value;scheduleDraw();}
- const k=d.slot;if(k&&e.target.files&&e.target.files[0]){resizeImage(e.target.files[0],3400,'image/jpeg',0.86).then(u=>{PHOTO_MEM[k]=u;if(!lsSet('rsl-photo-'+k,u))toast('This photo will be used now but is too large to keep after you reload.');e.target.value='';renderStudio();});}});
+ const k=d.slot;if(k&&e.target.files&&e.target.files[0]){resizeImage(e.target.files[0],3400,'image/jpeg',0.86).then(u=>{PHOTO_MEM[k]=u;e.target.value='';renderStudio();});}});
 $('#o-cmp-wrap').addEventListener('click',e=>{const b=e.target.closest('[data-del]');if(b){if(O.cmp.rows.length>1){O.cmp.rows.splice(+b.dataset.del,1);document.activeElement.blur();renderStudio();}else toast('Keep at least one row.');}});
 $('#o-cmp-add').onclick=()=>{if(O.cmp.rows.length>=8){toast('Up to 8 rows.');return;}O.cmp.rows.push({en:'',ar:'',l:'0',r:'0'});renderStudio();const ins=$$('#o-cmp-rows input[data-f="'+O.lang+'"]');ins[ins.length-1]?.focus();};
 function renderGS(){const on=O.tpl==='gs';$('#o-gs-wrap').style.display=on?'':'none';if(!on)return;
@@ -983,7 +985,7 @@ function renderGSNames(){const L=scorersList(),ar=O.lang==='ar',cur=(O.gsNames[O
 $('#o-gs-names').addEventListener('input',e=>{const i=+e.target.dataset.gsi;if(isNaN(i))return;(O.gsNames[O.lang]=O.gsNames[O.lang]||[])[i]=e.target.value;scheduleDraw();});
 $('#o-gsn').onchange=e=>{O.gsN=+e.target.value;renderStudio();};
 $('#o-gssplit').onchange=e=>{O.gsSplit=e.target.value==='1';renderStudio();};
-$('#o-gs-uploads').addEventListener('change',async e=>{const f=e.target.files&&e.target.files[0],k=e.target.dataset.slot;if(!f||!k)return;const d=await resizeImage(f,3400,'image/jpeg',0.86);PHOTO_MEM[k]=d;if(!lsSet('rsl-photo-'+k,d))toast('This photo will be used now but is too large to keep after you reload.');e.target.value='';renderStudio();});
+$('#o-gs-uploads').addEventListener('change',async e=>{const f=e.target.files&&e.target.files[0],k=e.target.dataset.slot;if(!f||!k)return;const d=await resizeImage(f,3400,'image/jpeg',0.86);PHOTO_MEM[k]=d;e.target.value='';renderStudio();});
 function scF(){return O.lang==='ar'?'Ar':'';}
 $('#o-ftmatch').onchange=e=>{O.ftMatch=e.target.value;renderStudio();};
 function saveScorers(field,val){const m=S.matches.find(x=>x.id===O.ftMatch);if(!m)return;m[field]=val;markDirty(mwPath(m.mw));scheduleDraw();}
@@ -1004,8 +1006,8 @@ function syncPhotoX(){$('#o-photo-x-wrap').style.display=O.photoZ>100?'':'none';
 $('#o-photo-z').oninput=e=>{O.photoZ=+e.target.value;if(O.photoZ<=100)O.photoX=50,$('#o-photo-x').value=50;syncPhotoX();scheduleDraw();};
 $('#o-photo-x').oninput=e=>{O.photoX=+e.target.value;scheduleDraw();};
 $('#o-photo-reset').onclick=()=>{O.photoZ=100;O.photoX=50;O.photoY=30;renderStudio();scheduleDraw();};
-$('#o-photo').onchange=async e=>{const f=e.target.files[0];if(!f)return;const d=await resizeImage(f,3400,'image/jpeg',0.86);PHOTO_MEM[O.tpl]=d;if(!lsSet('rsl-photo-'+O.tpl,d))toast('This photo will be used now but is too large to keep after you reload.');e.target.value='';
- if(O.tpl==='achB'){PHOTO_MEM.achP=false;lsDel('rsl-photo-achP');renderStudio();runCutout();return;}renderStudio();};
+$('#o-photo').onchange=async e=>{const f=e.target.files[0];if(!f)return;const d=await resizeImage(f,3400,'image/jpeg',0.86);PHOTO_MEM[O.tpl]=d;e.target.value='';
+ if(O.tpl==='achB'){PHOTO_MEM.achP=false;renderStudio();runCutout();return;}renderStudio();};
 function canvasBlob(cv,type,q){return new Promise(r=>cv.toBlob(r,type||'image/png',q));}
 const jpg=cv=>canvasBlob(cv,'image/jpeg',0.9);
 async function saveBlob(name,blob){
