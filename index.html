@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>RSL GFX Studio</title>
 <meta name="rsl-site" content="1">
-<meta name="rsl-build" content="1794834303">
+<meta name="rsl-build" content="1794834443">
 <meta name="rsl-pass" content="5492dcdcf24546ce707e4c6e370ab4a0736d0defa0cbbf6f66798e57a309c6a1">
 <meta name="robots" content="noindex,nofollow">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -821,7 +821,8 @@ function cutSrc(){if(PHOTO_MEM.achP===false)return null;if(PHOTO_MEM.achP)return
 let BGRM=null;
 async function autoCutout(src){
  if(!BGRM)BGRM=import('https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.5.5/+esm');
- const m=await BGRM;const blob=await m.removeBackground(src,{output:{format:'image/png',quality:0.9},progress:(key,cur,tot)=>{if(/fetch/.test(key)&&tot)setCutStatus(`Loading the cut-out tool… ${Math.round(cur/tot*100)}%`);}});
+ const m=await BGRM;const input=await (await fetch(new URL(src,location.href).href)).blob(); // give the tool the image itself, not a relative path
+ const blob=await m.removeBackground(input,{output:{format:'image/png',quality:0.9},progress:(key,cur,tot)=>{if(/fetch/.test(key)&&tot)setCutStatus(`Loading the cut-out tool… ${Math.round(cur/tot*100)}%`);}});
  return await new Promise(r=>{const fr=new FileReader();fr.onload=()=>r(fr.result);fr.readAsDataURL(blob);});}
 function setCutStatus(t){const el=$('#o-ach-status');if(el)el.textContent=t||'';}
 async function runCutout(){const src=photoSrc('achB');PHOTO_MEM.achP=false;renderStudio();setCutStatus('Cutting out the player… (the first time takes a little longer)');$('#o-ach-auto').disabled=true;
