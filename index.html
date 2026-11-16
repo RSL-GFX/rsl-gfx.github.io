@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>RSL GFX Studio</title>
 <meta name="rsl-site" content="1">
-<meta name="rsl-build" content="1794832911">
+<meta name="rsl-build" content="1794833036">
 <meta name="rsl-pass" content="5492dcdcf24546ce707e4c6e370ab4a0736d0defa0cbbf6f66798e57a309c6a1">
 <meta name="robots" content="noindex,nofollow">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -889,14 +889,14 @@ function renderFT(o){const on=O.tpl==='ft'||O.tpl==='thumb';$('#o-ft-wrap').styl
   if(document.activeElement!==$('#o-hsc'))$('#o-hsc').value=cur['homeScorers'+F]||'';if(document.activeElement!==$('#o-asc'))$('#o-asc').value=cur['awayScorers'+F]||'';}}
 function renderCmp(){const on=O.tpl==='cmp';$('#o-cmp-wrap').style.display=on?'':'none';$('#o-mw').closest('label').style.display=on?'none':'';if(!on)return;
  $('#o-daylbl-wrap').style.display='none';$('#o-title').closest('label').style.display='none';$('#o-photo').closest('.btns').style.display='none';
- if($('#o-cmp-wrap').contains(document.activeElement))return;const L=O.lang,C=O.cmp;
+ const ae=document.activeElement;if(ae&&ae.tagName==='INPUT'&&ae.type==='text'&&$('#o-cmp-wrap').contains(ae))return;const L=O.lang,C=O.cmp; // don't rebuild while typing
  $('#o-cmp-players').innerHTML=C.p.map((p,j)=>`<div class="row"><label class="f" style="flex:0 0 42%"><span>Player ${j+1} club</span><select data-cp="${j}" data-f="team">${S.teams.map(t=>`<option value="${t.id}" ${t.id===p.team?'selected':''}>${esc(t.en)}</option>`).join('')}</select></label><label class="f"><span>Name${L==='ar'?' (Arabic)':''}</span><input type="text" data-cp="${j}" data-f="${L}" ${L==='ar'?'dir="rtl"':''} value="${esc(p[L]||'')}"></label></div>`).join('');
  $('#o-cmp-rows').innerHTML=C.rows.map((r,i)=>`<div class="row" style="margin-top:6px"><input type="text" data-cr="${i}" data-f="l" value="${esc(r.l)}" style="flex:0 0 18%;text-align:center"><input type="text" data-cr="${i}" data-f="${L}" ${L==='ar'?'dir="rtl"':''} value="${esc(r[L]||'')}" placeholder="${L==='ar'?'الإحصائية':'Stat'}"><input type="text" data-cr="${i}" data-f="r" value="${esc(r.r)}" style="flex:0 0 18%;text-align:center"><button class="btn sm danger" data-del="${i}" type="button" style="flex:0 0 auto" title="Remove row">×</button></div>`).join('');}
 $('#o-cmp-wrap').addEventListener('input',e=>{const d=e.target.dataset;if(d.cp!=null)O.cmp.p[+d.cp][d.f]=e.target.value;else if(d.cr!=null)O.cmp.rows[+d.cr][d.f]=e.target.value;else return;scheduleDraw();});
 $('#o-cmp-wrap').addEventListener('change',e=>{const d=e.target.dataset;if(d.cp!=null&&d.f==='team'){O.cmp.p[+d.cp].team=e.target.value;scheduleDraw();}
  const k=d.slot;if(k&&e.target.files&&e.target.files[0]){resizeImage(e.target.files[0],3400,'image/jpeg',0.86).then(u=>{PHOTO_MEM[k]=u;if(!lsSet('rsl-photo-'+k,u))toast('This photo will be used now but is too large to keep after you reload.');e.target.value='';renderStudio();});}});
 $('#o-cmp-wrap').addEventListener('click',e=>{const b=e.target.closest('[data-del]');if(b){if(O.cmp.rows.length>1){O.cmp.rows.splice(+b.dataset.del,1);document.activeElement.blur();renderStudio();}else toast('Keep at least one row.');}});
-$('#o-cmp-add').onclick=()=>{if(O.cmp.rows.length>=8){toast('Up to 8 rows.');return;}O.cmp.rows.push({en:'',ar:'',l:'0',r:'0'});renderStudio();};
+$('#o-cmp-add').onclick=()=>{if(O.cmp.rows.length>=8){toast('Up to 8 rows.');return;}O.cmp.rows.push({en:'',ar:'',l:'0',r:'0'});renderStudio();const ins=$$('#o-cmp-rows input[data-f="'+O.lang+'"]');ins[ins.length-1]?.focus();};
 function renderGS(){const on=O.tpl==='gs';$('#o-gs-wrap').style.display=on?'':'none';if(!on)return;
  $('#o-daylbl-wrap').style.display='none';$('#o-title').closest('label').style.display='';$('#o-title').placeholder=O.lang==='ar'?'ترتيب الهدافين':'TOP GOAL SCORERS';
  renderGSNames();
