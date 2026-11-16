@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>RSL GFX Studio</title>
 <meta name="rsl-site" content="1">
-<meta name="rsl-build" content="1794832141">
+<meta name="rsl-build" content="1794832314">
 <meta name="rsl-pass" content="5492dcdcf24546ce707e4c6e370ab4a0736d0defa0cbbf6f66798e57a309c6a1">
 <meta name="robots" content="noindex,nofollow">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -185,6 +185,7 @@ body.team #nav{display:none}
     </div>
     <div class="panel">
       <h3>Options</h3>
+      <label class="f" id="o-tsize-wrap"><span id="o-tsize-l">Layout</span><select id="o-tsize"></select></label>
       <label class="f" id="o-lang-wrap"><span>Language</span><select id="o-lang"><option value="en">English</option><option value="ar">العربية (Arabic)</option></select></label>
       <label class="f"><span>Matchweek</span><select id="o-mw"></select></label>
       <div id="o-ft-wrap">
@@ -193,7 +194,6 @@ body.team #nav{display:none}
         <p class="note" style="margin-top:4px">One goal per line: name, then minute, e.g. <code>Ronaldo 64</code>, <code>Toney 90+3 (P)</code>. <span id="sc-save-note">Saved with the match for everyone.</span></p>
       </div>
       <label class="f" id="o-day-wrap"><span>Match day</span><select id="o-day"></select></label>
-      <label class="f" id="o-tsize-wrap"><span>Table size</span><select id="o-tsize"><option value="table">Full table (18 clubs)</option><option value="top4">Top 4</option><option value="bot4">Bottom 4</option></select></label>
       <label class="f" id="o-src-wrap"><span>Table source</span><select id="o-src"><option value="official">Official SAFF table (synced)</option><option value="calc">Calculated from results here</option></select></label>
       <label class="f"><span id="o-title-lbl">Title (leave empty for automatic)</span><input type="text" id="o-title" placeholder="Automatic"></label>
       <label class="f" id="o-daylbl-wrap"><span>Day label (leave empty for automatic)</span><input type="text" id="o-daylbl" placeholder="Automatic"></label>
@@ -792,17 +792,23 @@ function drawThumb(c,o){
 }
 const TEMPLATES={
  table:{name:'Table',desc:'League table',W:TB.W,H:TB.H,draw:drawTable,table:true},
- mwfix:{name:'MW fixtures',desc:'Whole matchweek',W:3241,H:4201,draw:(c,o)=>drawMW(c,o,'fixtures'),fix:true,mw:true},
- mwres:{name:'MW results',desc:'Whole matchweek',W:3241,H:4201,draw:(c,o)=>drawMW(c,o,'results'),mw:true},
- dayfix:{name:'Day fixtures',desc:'One match day',W:CD.W,H:CD.H,draw:(c,o)=>drawDay(c,o,'fixtures'),fix:true,day:true},
- dayres:{name:'Day results',desc:'One match day',W:CD.W,H:CD.H,draw:(c,o)=>drawDay(c,o,'results'),day:true},
- ft:{name:'Full time',desc:'One match result',W:2160,H:2700,draw:drawFT},
+ mwfix:{name:'Fixtures',desc:'Matchweek or day',W:3241,H:4201,draw:(c,o)=>drawMW(c,o,'fixtures'),fix:true,mw:true},
+ mwres:{name:'Results',desc:'Matchweek or day',W:3241,H:4201,draw:(c,o)=>drawMW(c,o,'results'),mw:true},
+ dayfix:{hidden:true,name:'Day fixtures',desc:'One match day',W:CD.W,H:CD.H,draw:(c,o)=>drawDay(c,o,'fixtures'),fix:true,day:true},
+ dayres:{hidden:true,name:'Day results',desc:'One match day',W:CD.W,H:CD.H,draw:(c,o)=>drawDay(c,o,'results'),day:true},
+ ft:{name:'Full time',desc:'Post or thumbnail',W:2160,H:2700,draw:drawFT},
  gs:{name:'Top scorers',desc:'Goalscorers',W:3168,H:3960,draw:drawGS},
- thumb:{name:'Thumbnail',desc:'Highlights',W:3840,H:2160,draw:drawThumb,enOnly:true},
+ thumb:{hidden:true,name:'Thumbnail',desc:'Highlights',W:3840,H:2160,draw:drawThumb,enOnly:true},
  top4:{name:'Top 4',desc:'Short table',W:2160,H:2700,draw:(c,o)=>drawShort(c,o,false),hidden:true,table:true},
  bot4:{name:'Bottom 4',desc:'Short table',W:2160,H:2700,draw:(c,o)=>drawShort(c,o,true),hidden:true,table:true}
 };
 const TABLE_GROUP=['table','top4','bot4'];
+// Template tiles that hold several layouts; the "Layout" option switches between them.
+const GROUPS=[{tile:'table',label:'Table size',items:[['table','Full table (18 clubs)'],['top4','Top 4'],['bot4','Bottom 4']]},
+ {tile:'mwfix',label:'Layout',items:[['mwfix','Whole matchweek'],['dayfix','One match day']]},
+ {tile:'mwres',label:'Layout',items:[['mwres','Whole matchweek'],['dayres','One match day']]},
+ {tile:'ft',label:'Format',items:[['ft','Full time post'],['thumb','Highlights thumbnail']]}];
+const groupOf=k=>GROUPS.find(g=>g.items.some(i=>i[0]===k));
 function drawTo(canvas,o,scale){const T=TEMPLATES[o.tpl];const k=scale||(1080/T.W);canvas.width=Math.round(T.W*k);canvas.height=Math.round(T.H*k);
  const c=canvas.getContext('2d');c.setTransform(k,0,0,k,0,0);c.imageSmoothingQuality='high';T.draw(c,o);c.setTransform(1,0,0,1,0,0);}
 
@@ -816,13 +822,13 @@ function opts(){const mw=resolvedMw();return{...O,rawMw:O.mw,mw,day:resolvedDay(
 let drawQueued=false;function scheduleDraw(){if(drawQueued)return;drawQueued=true;requestAnimationFrame(()=>{drawQueued=false;drawPreview();});}
 function drawPreview(){drawTo($('#cv'),opts());}
 function renderStudio(){
- $('#tpls').innerHTML=Object.entries(TEMPLATES).filter(([k,v])=>!v.hidden).map(([k,v])=>`<button class="tpl ${k===O.tpl||(k==='table'&&TABLE_GROUP.includes(O.tpl))?'on':''}" data-tpl="${k}"><b>${esc(v.name)}</b><span>${esc(v.desc)}</span></button>`).join('');
+ $('#tpls').innerHTML=Object.entries(TEMPLATES).filter(([k,v])=>!v.hidden).map(([k,v])=>`<button class="tpl ${k===O.tpl||(groupOf(O.tpl)&&groupOf(O.tpl).tile===k)?'on':''}" data-tpl="${k}"><b>${esc(v.name)}</b><span>${esc(v.desc)}</span></button>`).join('');
  const isT=O.tpl==='table',isTG=TABLE_GROUP.includes(O.tpl),isThumb=O.tpl==='thumb';if(TEMPLATES[O.tpl].enOnly)O.lang='en';const mw=resolvedMw();
  $('#o-mw').innerHTML=`<option value="auto">Automatic (MW ${mw})</option>`+mwList().map(m=>`<option value="${m}" ${String(m)===String(O.mw)?'selected':''}>Matchweek ${m}</option>`).join('');
  const days=mwDays(mw);const rd=resolvedDay(mw);
  $('#o-day').innerHTML=`<option value="auto">Automatic (${esc(weekday(rd))} ${esc(rd||'')})</option>`+days.map(d=>{const n=mwMatches(mw).filter(m=>m.date===d).length;return `<option value="${d}" ${d===O.day?'selected':''}>${weekday(d)} ${d} · ${n} match${n>1?'es':''}</option>`}).join('');
  const isDay=!!TEMPLATES[O.tpl].day;$('#o-day-wrap').style.display=isDay?'':'none';$('#o-daylbl-wrap').style.display=(isTG||isThumb)?'none':'';$('#o-daylbl-wrap').querySelector('span').textContent=isDay?'Day label (leave empty for automatic)':'Right-hand label (leave empty for automatic)';$('#o-photo-wrap').style.display=isT?'none':'';
- $('#o-lang').value=O.lang;renderGS();$('#o-lang-wrap').style.display=isThumb?'none':'';$('#o-tsize-wrap').style.display=isTG?'':'none';$('#o-tsize').value=O.tpl;$('#o-src-wrap').style.display=isTG?'':'none';$('#o-src').value=O.src;$('#o-photo-y').value=O.photoY;$('#o-photo-z').value=O.photoZ;$('#o-photo-x').value=O.photoX;syncPhotoX();
+ $('#o-lang').value=O.lang;renderGS();$('#o-lang-wrap').style.display=isThumb?'none':'';{const G=groupOf(O.tpl);$('#o-tsize-wrap').style.display=G?'':'none';if(G){$('#o-tsize-l').textContent=G.label;$('#o-tsize').innerHTML=G.items.map(([k,l])=>`<option value="${k}" ${k===O.tpl?'selected':''}>${esc(l)}</option>`).join('');}}$('#o-src-wrap').style.display=isTG?'':'none';$('#o-src').value=O.src;$('#o-photo-y').value=O.photoY;$('#o-photo-z').value=O.photoZ;$('#o-photo-x').value=O.photoX;syncPhotoX();
  $('#b-zip').style.display=isDay?'':'none';
  const AR=O.lang==='ar';
  $('#o-title').placeholder=isThumb?'HIGHLIGHTS':isTG?(AR?`الجولة ${tableRows(opts()).mw}`:`MW ${tableRows(opts()).mw}`):O.tpl==='dayfix'?(AR?`الجولة ${mw}`:`MW ${mw}`):O.tpl==='mwfix'?(AR?'المباريات':'FIXTURES'):(AR?'النتائج':'RESULTS');$('#o-daylbl').placeholder=isDay?(AR?weekdayAr(rd):weekday(rd)):(AR?`الجولة ${mw}`:`MW ${mw}`);
@@ -869,7 +875,7 @@ $('#tpls').addEventListener('click',e=>{const b=e.target.closest('[data-tpl]');i
 $('#o-mw').onchange=e=>{O.mw=e.target.value;O.day='auto';O.ftMatch='';renderStudio();};
 $('#o-day').onchange=e=>{O.day=e.target.value;renderStudio();};
 $('#o-lang').onchange=e=>{O.lang=e.target.value;renderStudio();};
-$('#o-tsize').onchange=e=>{O.tpl=e.target.value;renderStudio();};
+$('#o-tsize').onchange=e=>{O.tpl=e.target.value;O.day='auto';if(!TEMPLATES[O.tpl].enOnly)$('#o-title').closest('label').style.display='';renderStudio();};
 $('#o-src').onchange=e=>{O.src=e.target.value;renderStudio();};
 $('#o-title').oninput=e=>{O.title=e.target.value;scheduleDraw();};
 $('#o-daylbl').oninput=e=>{O.dayLabel=e.target.value;scheduleDraw();};
