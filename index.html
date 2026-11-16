@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>RSL GFX Studio</title>
 <meta name="rsl-site" content="1">
-<meta name="rsl-build" content="1794829994">
+<meta name="rsl-build" content="1794830048">
 <meta name="rsl-pass" content="5492dcdcf24546ce707e4c6e370ab4a0736d0defa0cbbf6f66798e57a309c6a1">
 <meta name="robots" content="noindex,nofollow">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -533,7 +533,7 @@ function drawTable(c,o){
 const GRAD=[[0,'#ffffff'],[0.5,'#ffffff'],[1,'#a3c1ff']];
 const nameCol=t=>(t&&t.nameColor)||(lum((t&&t.color)||'#444')>150?'#0d1d4a':'#ffffff');
 // Card specs measured from the PSDs (design pixels, relative to the card's top-left).
-const SPEC_DAY={fix:{city:384,citySize:42,time:464,timeSize:76,stad:522,stadEn:44,stadAr:44},w:647,boxH:325,r:48,crestCy:131.5,crest:209,nameBase:291,nameSize:33.4,cityBase:386,citySize:44,timeBase:482,timeSize:86,scoreBase:471,scoreSize:154,hx:162,ax:486,dash:[304,414,41,20]};
+const SPEC_DAY={fix:{city:384,citySize:42,time:464,timeSize:76,stad:516,stadEn:35,stadAr:36},w:647,boxH:325,r:48,crestCy:131.5,crest:209,nameBase:291,nameSize:33.4,cityBase:386,citySize:44,timeBase:482,timeSize:86,scoreBase:471,scoreSize:154,hx:162,ax:486,dash:[304,414,41,20]};
 const SPEC_MWF={w:699,boxH:350,r:42,crestCy:145,crest:216,nameBase:318,nameSize:41.4,cityBase:414,citySize:42.8,timeBase:479,timeSize:70};
 const SPEC_MWR={w:688,boxH:345,r:42,crestCy:141.5,crest:212,nameBase:313,nameSize:41.4,scoreBase:488,scoreSize:148.6,hx:167,ax:499,dash:[309,439,43,19]};
 function vgrad(c,y0,y1,a,b){const g=c.createLinearGradient(0,y0,0,y1);g.addColorStop(0,a);g.addColorStop(1,b);return g;}
@@ -610,7 +610,7 @@ function drawDay(c,o,mode){
  const k=n>4?full/row:({1:1.3,2:1.3,3:1.2,4:1})[n];
  const total=row*k,x0=(CD.W-total)/2,top=Math.max(3290,CD.top-(510*k-510)/2);
  ms.forEach((m,i)=>{const p=ar?n-1-i:i;c.save();c.translate(x0+p*(S_.w+CD.gap)*k,top);c.scale(k,k);
-  const BH=mode==='fixtures'?605:510;rr(c,0,0,S_.w,BH,S_.r);c.fillStyle='rgba(255,255,255,0.055)';c.fill();drawCard(c,m,mode,S_,ar);c.restore();});
+  const BH=mode==='fixtures'?585:510;rr(c,0,0,S_.w,BH,S_.r);c.fillStyle='rgba(255,255,255,0.055)';c.fill();drawCard(c,m,mode,S_,ar);c.restore();});
 }
 /* Whole-matchweek version (FIXTURES & RESULTS psd, 3241 × 4201) */
 const MWP={y:1688,r:200,h:2573,photoH:1900,rsl:[200,1641,358,317]};
