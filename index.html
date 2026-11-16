@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>RSL GFX Studio</title>
 <meta name="rsl-site" content="1">
-<meta name="rsl-build" content="1794830185">
+<meta name="rsl-build" content="1794830813">
 <meta name="rsl-pass" content="5492dcdcf24546ce707e4c6e370ab4a0736d0defa0cbbf6f66798e57a309c6a1">
 <meta name="robots" content="noindex,nofollow">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -193,6 +193,7 @@ body.team #nav{display:none}
         <p class="note" style="margin-top:4px">One goal per line: name, then minute, e.g. <code>Ronaldo 64</code>, <code>Toney 90+3 (P)</code>. <span id="sc-save-note">Saved with the match for everyone.</span></p>
       </div>
       <label class="f" id="o-day-wrap"><span>Match day</span><select id="o-day"></select></label>
+      <label class="f" id="o-tsize-wrap"><span>Table size</span><select id="o-tsize"><option value="table">Full table (18 clubs)</option><option value="top4">Top 4</option><option value="bot4">Bottom 4</option></select></label>
       <label class="f" id="o-src-wrap"><span>Table source</span><select id="o-src"><option value="official">Official SAFF table (synced)</option><option value="calc">Calculated from results here</option></select></label>
       <label class="f"><span id="o-title-lbl">Title (leave empty for automatic)</span><input type="text" id="o-title" placeholder="Automatic"></label>
       <label class="f" id="o-daylbl-wrap"><span>Day label (leave empty for automatic)</span><input type="text" id="o-daylbl" placeholder="Automatic"></label>
@@ -428,7 +429,8 @@ async function resizeImage(file,max,type,q){const src=await readFile(file);const
  c.getContext('2d').drawImage(im,0,0,c.width,c.height);return c.toDataURL(type||'image/png',q||0.9);}
 const A={tableBg:'assets/table_bg.jpg',rsl:'assets/rsl_logo.png',panel:'assets/panel_day.jpg',panelMW:'assets/panel_mw.jpg',
  ftBox:'assets/ft_box.png',ftBoxTall:'assets/ft_box_tall.png',
- photo:{ft:'assets/photo_ft.jpg',dayfix:'assets/photo_fixtures.jpg',dayres:'assets/photo_results.jpg',mwfix:'assets/photo_mw_fixtures.jpg',mwres:'assets/photo_mw_results.jpg'}};
+ panelT4:'assets/panel_top4.jpg',panelThumb:'assets/panel_thumb.jpg',
+ photo:{top4:'assets/photo_top4.jpg',bot4:'assets/photo_top4.jpg',thumb:'assets/photo_thumb.jpg',ft:'assets/photo_ft.jpg',dayfix:'assets/photo_fixtures.jpg',dayres:'assets/photo_results.jpg',mwfix:'assets/photo_mw_fixtures.jpg',mwres:'assets/photo_mw_results.jpg'}};
 const ASSET_V='11'; // bump when crest files change so browsers don't keep old copies
 const logoColor=t=>t?(t.logo||(KNOWN.has(t.id)?`assets/logos/${t.id}_c.png?v=${ASSET_V}`:null)):null;
 // Built-in crests are full tiles from the club-logos file (crest ≈74% of the tile, as the designer sized them).
@@ -697,20 +699,66 @@ function drawFT(c,o){
   txt(c,'\u2066'+g.min+'\u2069',AX+rw/2,y,FT.bold,sz,'#ffffff','center');name(g,nx,y,'left',(1833-EDGE)-nx);});
  c.restore();
 }
+/* ---- Short table: top 4 / bottom 4 (TOP4 psd, 2160 x 2700). Arabic is the PSD layout; English is its mirror. ---- */
+const T4={W:2160,H:2700,panelY:1890,cols:[1017,856,688,531,356,191],hdrY:2034,base:[2178.6,2322.4,2449.4,2572.3],posX:1980,logoX:1854,nameR:1776};
+function drawShort(c,o,bottom){
+ const {W,H}=T4,ar=o.lang==='ar',X=v=>ar?v:W-v;c.direction='ltr';
+ c.fillStyle='#05080e';c.fillRect(0,0,W,H);
+ cover(c,img(photoSrc(o.tpl)),0,0,W,H,o.photoY,o.photoZ,o.photoX);
+ const pn=img(A.panelT4);c.save();rr(c,0,T4.panelY,W,H-T4.panelY+300,[143,143,0,0]);c.clip();
+ if(pn){if(!ar){c.translate(W,0);c.scale(-1,1);}c.drawImage(pn,0,T4.panelY,W,810);}else{c.fillStyle='#0b0f17';c.fillRect(0,T4.panelY,W,H);}c.restore();
+ const rl=img(A.rsl);if(rl)contain(c,rl,X(1934.5),1948.5,209,185);
+ const T=tableRows(o);const all=T.rows.slice(0,18);const start=bottom?Math.max(0,all.length-4):0;const rows=all.slice(start,start+4);
+ // title
+ const title=o.title||(ar?`الجولة ${T.mw}`:`MW ${T.mw}`);
+ if(ar){c.direction='rtl';gradText(c,title,1795,1987,FT.arTitle,82,{align:'right',stops:[[0,'#b9c9f2'],[0.55,'#ffffff'],[1,'#ffffff']]});c.direction='ltr';}
+ else gradText(c,title,W-1795,1987,FT.title,86,{stops:GRAD});
+ // column headers
+ const hdr=ar?['لعب','فاز','خسر','تعادل','+/-','نقاط']:['P','W','D','L','GD','PTS'];
+ hdr.forEach((l,i)=>{c.direction=(ar&&l!=='+/-')?'rtl':'ltr';txt(c,l,X(T4.cols[i]),T4.hdrY,FT.arLight,ar?51.5:46,'#cfd5e1','center');});
+ // divider lines (the same positions as the full table, when they fall inside these four rows)
+ (S.settings.separators||[]).forEach(p=>{const i=p-start-1;if(i<0||i>2)return;const y=(T4.base[i]+T4.base[i+1])/2-36;c.fillStyle='rgba(95,125,190,0.45)';c.fillRect(140,y-1.5,W-280,3);});
+ rows.forEach((r,i)=>{const y=T4.base[i],t=team(r.id);
+  c.direction='ltr';txt(c,String(start+i+1),X(T4.posX),y,FT.arMed,72,'#56637d','center');
+  const lg=img(logoMono(t));const ls=isTile(t,'mono')?78/TILE:78;if(lg)contain(c,lg,X(T4.logoX),y-26,ls,ls);
+  if(ar){c.direction='rtl';txt(c,t?(t.ar||t.en):'?',T4.nameR,y-11,FT.arMed,72,'#ffffff','right','alphabetic',T4.nameR-1150);}
+  else{c.direction='ltr';txt(c,t?t.en.toUpperCase():'?',X(T4.nameR),y-12,FT.arMed,60,'#ffffff','left','alphabetic',T4.nameR-1150);}
+  const gd=(r.gf??0)-(r.ga??0);const vals=ar?[r.p,r.w,r.l,r.d,gd,r.pts]:[r.p,r.w,r.d,r.l,gd>0?'+'+gd:gd,r.pts];
+  c.direction='ltr';vals.forEach((v,k)=>txt(c,String(v??0),X(T4.cols[k]),y,FT.arMed,72,'#ffffff','center'));});
+ c.direction='ltr';
+}
+/* ---- Highlights thumbnail (thumbnail psd, 3840 x 2160, English only) ---- */
+function drawThumb(c,o){
+ const W=3840,H=2160;c.direction='ltr';c.fillStyle='#05080e';c.fillRect(0,0,W,H);
+ cover(c,img(photoSrc('thumb')),0,0,W,H,o.photoY,o.photoZ,o.photoX);
+ const pn=img(A.panelThumb);c.save();rr(c,-200,0,1335+200,H,[0,150,150,0]);c.clip();if(pn)c.drawImage(pn,0,0,1335,H);else{c.fillStyle='#0b0f17';c.fillRect(0,0,1335,H);}c.restore();
+ const rl=img(A.rsl);if(rl)contain(c,rl,191.5,172.5,213,189);
+ const title=(o.title||'HIGHLIGHTS').toUpperCase();
+ c.save();c.translate(340,216.5);c.scale(1.066,1);const ts=fitSize(c,FT.title,title,109.7,(1290-340)/1.066);gradText(c,title,0,0,FT.title,ts,{stops:GRAD});c.restore();
+ const m=ftMatch(o);if(!m)return;const ht=team(m.home),at=team(m.away);
+ [[ht,502,m.hs],[at,1209,m.as]].forEach(([t,y,sc])=>{
+  rr(c,85,y,425,421,46);c.fillStyle=(t&&t.color)||'#444';c.fill();
+  const cs=isTile(t,'logo')?322/TILE:322;contain(c,img(logoColor(t)),297.5,y+210.5,cs,cs);
+  if(isPlayed(m)){c.save();c.translate(921,y+471);c.scale(1.066,1);txt(c,String(sc),0,0,FT.num,708,'#ffffff','center','alphabetic',760/1.066);c.restore();}});
+}
 const TEMPLATES={
- table:{name:'Table',desc:'League table',W:TB.W,H:TB.H,draw:drawTable},
+ table:{name:'Table',desc:'League table',W:TB.W,H:TB.H,draw:drawTable,table:true},
  mwfix:{name:'MW fixtures',desc:'Whole matchweek',W:3241,H:4201,draw:(c,o)=>drawMW(c,o,'fixtures'),fix:true,mw:true},
  mwres:{name:'MW results',desc:'Whole matchweek',W:3241,H:4201,draw:(c,o)=>drawMW(c,o,'results'),mw:true},
  dayfix:{name:'Day fixtures',desc:'One match day',W:CD.W,H:CD.H,draw:(c,o)=>drawDay(c,o,'fixtures'),fix:true,day:true},
  dayres:{name:'Day results',desc:'One match day',W:CD.W,H:CD.H,draw:(c,o)=>drawDay(c,o,'results'),day:true},
- ft:{name:'Full time',desc:'One match result',W:2160,H:2700,draw:drawFT}
+ ft:{name:'Full time',desc:'One match result',W:2160,H:2700,draw:drawFT},
+ thumb:{name:'Thumbnail',desc:'Highlights (English)',W:3840,H:2160,draw:drawThumb,enOnly:true},
+ top4:{name:'Top 4',desc:'Short table',W:2160,H:2700,draw:(c,o)=>drawShort(c,o,false),hidden:true,table:true},
+ bot4:{name:'Bottom 4',desc:'Short table',W:2160,H:2700,draw:(c,o)=>drawShort(c,o,true),hidden:true,table:true}
 };
+const TABLE_GROUP=['table','top4','bot4'];
 function drawTo(canvas,o,scale){const T=TEMPLATES[o.tpl];const k=scale||(1080/T.W);canvas.width=Math.round(T.W*k);canvas.height=Math.round(T.H*k);
  const c=canvas.getContext('2d');c.setTransform(k,0,0,k,0,0);c.imageSmoothingQuality='high';T.draw(c,o);c.setTransform(1,0,0,1,0,0);}
 
 /* ============ studio UI ============ */
 const O={lang:'en',tpl:'mwfix',ftMatch:'',mw:'auto',day:'auto',title:'',dayLabel:'',src:'official',size:'1',photoY:30,photoZ:100,photoX:50};
-function resolvedMw(){if(O.mw!=='auto')return +O.mw;if(TEMPLATES[O.tpl].fix)return nextMw();if(O.tpl==='table'&&S.official&&S.official.mw)return S.official.mw;return lastPlayedMw();}
+function resolvedMw(){if(O.mw!=='auto')return +O.mw;if(TEMPLATES[O.tpl].fix)return nextMw();if(TABLE_GROUP.includes(O.tpl)&&S.official&&S.official.mw)return S.official.mw;return lastPlayedMw();}
 function resolvedDay(mw){const days=mwDays(mw);if(O.day!=='auto'&&days.includes(O.day))return O.day;const ms=mwMatches(mw);
  if(TEMPLATES[O.tpl].fix){const u=ms.find(m=>!isPlayed(m));return u?u.date:days[0];}
  const p=ms.filter(isPlayed);return p.length?p[p.length-1].date:days[0];}
@@ -718,26 +766,27 @@ function opts(){const mw=resolvedMw();return{...O,rawMw:O.mw,mw,day:resolvedDay(
 let drawQueued=false;function scheduleDraw(){if(drawQueued)return;drawQueued=true;requestAnimationFrame(()=>{drawQueued=false;drawPreview();});}
 function drawPreview(){drawTo($('#cv'),opts());}
 function renderStudio(){
- $('#tpls').innerHTML=Object.entries(TEMPLATES).map(([k,v])=>`<button class="tpl ${k===O.tpl?'on':''}" data-tpl="${k}"><b>${esc(v.name)}</b><span>${esc(v.desc)}</span></button>`).join('');
- const isT=O.tpl==='table';const mw=resolvedMw();
+ $('#tpls').innerHTML=Object.entries(TEMPLATES).filter(([k,v])=>!v.hidden).map(([k,v])=>`<button class="tpl ${k===O.tpl||(k==='table'&&TABLE_GROUP.includes(O.tpl))?'on':''}" data-tpl="${k}"><b>${esc(v.name)}</b><span>${esc(v.desc)}</span></button>`).join('');
+ const isT=O.tpl==='table',isTG=TABLE_GROUP.includes(O.tpl),isThumb=O.tpl==='thumb';if(TEMPLATES[O.tpl].enOnly)O.lang='en';const mw=resolvedMw();
  $('#o-mw').innerHTML=`<option value="auto">Automatic (MW ${mw})</option>`+mwList().map(m=>`<option value="${m}" ${String(m)===String(O.mw)?'selected':''}>Matchweek ${m}</option>`).join('');
  const days=mwDays(mw);const rd=resolvedDay(mw);
  $('#o-day').innerHTML=`<option value="auto">Automatic (${esc(weekday(rd))} ${esc(rd||'')})</option>`+days.map(d=>{const n=mwMatches(mw).filter(m=>m.date===d).length;return `<option value="${d}" ${d===O.day?'selected':''}>${weekday(d)} ${d} · ${n} match${n>1?'es':''}</option>`}).join('');
- const isDay=!!TEMPLATES[O.tpl].day;$('#o-day-wrap').style.display=isDay?'':'none';$('#o-daylbl-wrap').style.display=isT?'none':'';$('#o-daylbl-wrap').querySelector('span').textContent=isDay?'Day label (leave empty for automatic)':'Right-hand label (leave empty for automatic)';$('#o-photo-wrap').style.display=isT?'none':'';
- $('#o-lang').value=O.lang;$('#o-src-wrap').style.display=isT?'':'none';$('#o-src').value=O.src;$('#o-photo-y').value=O.photoY;$('#o-photo-z').value=O.photoZ;$('#o-photo-x').value=O.photoX;syncPhotoX();
+ const isDay=!!TEMPLATES[O.tpl].day;$('#o-day-wrap').style.display=isDay?'':'none';$('#o-daylbl-wrap').style.display=(isTG||isThumb)?'none':'';$('#o-daylbl-wrap').querySelector('span').textContent=isDay?'Day label (leave empty for automatic)':'Right-hand label (leave empty for automatic)';$('#o-photo-wrap').style.display=isT?'none':'';
+ $('#o-lang').value=O.lang;$('#o-lang-wrap').style.display=isThumb?'none':'';$('#o-tsize-wrap').style.display=isTG?'':'none';$('#o-tsize').value=O.tpl;$('#o-src-wrap').style.display=isTG?'':'none';$('#o-src').value=O.src;$('#o-photo-y').value=O.photoY;$('#o-photo-z').value=O.photoZ;$('#o-photo-x').value=O.photoX;syncPhotoX();
  $('#b-zip').style.display=isDay?'':'none';
  const AR=O.lang==='ar';
- $('#o-title').placeholder=isT?(AR?`الجولة ${tableRows(opts()).mw}`:`MW ${tableRows(opts()).mw}`):O.tpl==='dayfix'?(AR?`الجولة ${mw}`:`MW ${mw}`):O.tpl==='mwfix'?(AR?'المباريات':'FIXTURES'):(AR?'النتائج':'RESULTS');$('#o-daylbl').placeholder=isDay?(AR?weekdayAr(rd):weekday(rd)):(AR?`الجولة ${mw}`:`MW ${mw}`);
+ $('#o-title').placeholder=isThumb?'HIGHLIGHTS':isTG?(AR?`الجولة ${tableRows(opts()).mw}`:`MW ${tableRows(opts()).mw}`):O.tpl==='dayfix'?(AR?`الجولة ${mw}`:`MW ${mw}`):O.tpl==='mwfix'?(AR?'المباريات':'FIXTURES'):(AR?'النتائج':'RESULTS');$('#o-daylbl').placeholder=isDay?(AR?weekdayAr(rd):weekday(rd)):(AR?`الجولة ${mw}`:`MW ${mw}`);
  const o=opts();let hint='';
- if(isT){const T=tableRows(o);hint=T.official?`Official SAFF table after matchweek ${T.mw}${S.sync&&S.sync.at?', synced '+new Date(S.sync.at).toLocaleString():''}.`:`Calculated from every result up to matchweek ${o.mw} (points, goal difference, goals scored). Set Matchweek to Automatic to use the official SAFF table.`;}
+ if(isTG){const T=tableRows(o);hint=(O.tpl!=='table'?(O.tpl==='top4'?'Top 4 of the ':'Bottom 4 of the '):'')+T.official?`Official SAFF table after matchweek ${T.mw}${S.sync&&S.sync.at?', synced '+new Date(S.sync.at).toLocaleString():''}.`:`Calculated from every result up to matchweek ${o.mw} (points, goal difference, goals scored). Set Matchweek to Automatic to use the official SAFF table.`;}
  else if(!isDay){const ms=mwMatches(o.mw);hint=`${ms.length} matches in matchweek ${o.mw}${ms.some(m=>!isPlayed(m))&&O.tpl==='mwres'?' (unplayed matches show their kick-off time)':''}.`;}
  else{const n=dayMatches(o).length;hint=`${n} match${n===1?'':'es'} on ${weekday(o.day)} ${o.day||''}. Cards resize to fit the number of matches.`;}
  if(O.tpl==='ft'){const m=ftMatch(o);hint=m&&!isPlayed(m)?'This match has no result yet; the score appears once it is played.':'Pick the match, then type the scorers. The score comes from the synced results.';}
  $('#o-hint').textContent=hint;
  renderFT(o);
  scheduleDraw();}
-function renderFT(o){const on=O.tpl==='ft';$('#o-ft-wrap').style.display=on?'':'none';if(!on)return;
- $('#o-daylbl-wrap').style.display='none';$('#o-title').closest('label').style.display='none';
+function renderFT(o){const on=O.tpl==='ft'||O.tpl==='thumb';$('#o-ft-wrap').style.display=on?'':'none';if(!on)return;
+ $('#o-daylbl-wrap').style.display='none';$('#o-title').closest('label').style.display=O.tpl==='thumb'?'':'none';
+ $$('#o-ft-wrap .row, #o-ft-wrap .note').forEach(e=>e.style.display=O.tpl==='thumb'?'none':'');
  const ms=mwMatches(o.mw);const cur=ftMatch(o);O.ftMatch=cur?cur.id:'';
  $('#o-ftmatch').innerHTML=ms.map(m=>`<option value="${m.id}" ${cur&&m.id===cur.id?'selected':''}>${esc(team(m.home)?.en)} ${isPlayed(m)?m.hs+'–'+m.as:'v'} ${esc(team(m.away)?.en)}</option>`).join('');
  const F=scF();
@@ -756,6 +805,7 @@ $('#tpls').addEventListener('click',e=>{const b=e.target.closest('[data-tpl]');i
 $('#o-mw').onchange=e=>{O.mw=e.target.value;O.day='auto';O.ftMatch='';renderStudio();};
 $('#o-day').onchange=e=>{O.day=e.target.value;renderStudio();};
 $('#o-lang').onchange=e=>{O.lang=e.target.value;renderStudio();};
+$('#o-tsize').onchange=e=>{O.tpl=e.target.value;renderStudio();};
 $('#o-src').onchange=e=>{O.src=e.target.value;renderStudio();};
 $('#o-title').oninput=e=>{O.title=e.target.value;scheduleDraw();};
 $('#o-daylbl').oninput=e=>{O.dayLabel=e.target.value;scheduleDraw();};
@@ -773,10 +823,12 @@ async function saveBlob(name,blob){
  if(SITE){const u=URL.createObjectURL(blob);const a=document.createElement('a');a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000);toast('Downloaded '+name);return;}
  const url=URL.createObjectURL(blob);const isImg=blob.type.startsWith('image/');
  openDlg(`<h2>${esc(name)}</h2><p class="note" style="margin-top:0">${isImg?'Right-click the image (or long-press on a phone) and choose Save.':'Click the link to download.'}</p>${isImg?`<img src="${url}" alt="">`:`<p><a class="btn pri" href="${url}" download="${esc(name)}">Download ${esc(name)}</a></p>`}<div class="btns"><button class="btn" data-close>Close</button></div>`);}
-function collectImgs(o){const l=[A.tableBg,A.rsl,A.panel,A.panelMW,A.ftBox,A.ftBoxTall,...Object.keys(A.photo).map(photoSrc)];S.teams.forEach(t=>{l.push(logoColor(t),logoMono(t));});return l.filter(Boolean);}
+function collectImgs(o){const l=[A.tableBg,A.rsl,A.panel,A.panelMW,A.ftBox,A.ftBoxTall,A.panelT4,A.panelThumb,...Object.keys(A.photo).map(photoSrc)];S.teams.forEach(t=>{l.push(logoColor(t),logoMono(t));});return l.filter(Boolean);}
 function exportScale(o){return 2160/TEMPLATES[o.tpl].W;} // every export is 2160 px wide (2x of 1080)
 function fileName(o){return fileName0(o)+(o.lang==='ar'?'_AR':'');}
-function fileName0(o){if(o.tpl==='ft'){const m=ftMatch(o);return `RSL_FullTime_MW${pad2(o.mw)}_${m?(team(m.home)?.short+'-'+team(m.away)?.short):''}`;}
+function fileName0(o){if(o.tpl==='thumb'){const m=ftMatch(o);return `RSL_Thumbnail_MW${pad2(o.mw)}_${m?(team(m.home)?.short+'-'+team(m.away)?.short):''}`;}
+ if(o.tpl==='top4'||o.tpl==='bot4')return `RSL_Table_${o.tpl==='top4'?'Top4':'Bottom4'}_MW${pad2(tableRows(o).mw)}`;
+ if(o.tpl==='ft'){const m=ftMatch(o);return `RSL_FullTime_MW${pad2(o.mw)}_${m?(team(m.home)?.short+'-'+team(m.away)?.short):''}`;}
  if(o.tpl==='table')return `RSL_Table_MW${pad2(tableRows(o).mw)}`;const T=TEMPLATES[o.tpl];return `RSL_${T.fix?'Fixtures':'Results'}_MW${pad2(o.mw)}${T.day?'_'+weekday(o.day):''}`;}
 $('#b-png').onclick=async()=>{await fontsReady;const o=opts();await Promise.all(collectImgs(o).map(loadImg));const cv=document.createElement('canvas');drawTo(cv,o,exportScale(o));saveBlob(fileName(o)+'.jpg',await jpg(cv));};
 $('#b-zip').onclick=async()=>{if(!window.JSZip){toast('The ZIP library didn\'t load. Download each day one at a time instead.');return;}
